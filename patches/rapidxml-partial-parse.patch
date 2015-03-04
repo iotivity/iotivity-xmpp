@@ -1,0 +1,80 @@
+diff --git rapidxml.hpp rapidxml.hpp
+index 6b82f20..e13f260 100644
+--- rapidxml.hpp
++++ rapidxml.hpp
+@@ -246,6 +246,14 @@ namespace rapidxml
+     //! See xml_document::parse() function.
+     const int parse_normalize_whitespace = 0x800;
+ 
++    //! 2015/03/24 Intel
++    //! Terminate parsing if a complete node is read. Parsing may be resumed with the
++    //! subsequent character if the original XML document is well-formed. This addendum is
++    //! included to provide support for XML streams.
++    //! <br><br>
++    //! See xml_document::parse() function.
++    const int parse_stop_at_next_sibling = 0x8000;
++
+     // Compound flags
+     
+     //! Parse flags which represent default behaviour of the parser. 
+@@ -1377,11 +1385,33 @@ namespace rapidxml
+         //! Document can be parsed into multiple times. 
+         //! Each new call to parse removes previous nodes and attributes (if any), but does not clear memory pool.
+         //! \param text XML data to parse; pointer is non-const to denote fact that this data may be modified by the parser.
++        //! \param bytesRead The number of bytes consumed before parsing stopped.
+         template<int Flags>
+         void parse(Ch *text)
+         {
++            size_t bytesRead;
++            parse<Flags>(text, bytesRead);
++        }
++
++        //! Parses zero-terminated XML string according to given flags.
++        //! Passed string will be modified by the parser, unless rapidxml::parse_non_destructive flag is used.
++        //! The string must persist for the lifetime of the document.
++        //! In case of error, rapidxml::parse_error exception will be thrown.
++        //! <br><br>
++        //! If you want to parse contents of a file, you must first load the file into the memory, and pass pointer to its beginning.
++        //! Make sure that data is zero-terminated.
++        //! <br><br>
++        //! Document can be parsed into multiple times. 
++        //! Each new call to parse removes previous nodes and attributes (if any), but does not clear memory pool.
++        //! \param text XML data to parse; pointer is non-const to denote fact that this data may be modified by the parser.
++        template<int Flags>
++        void parse(Ch *text, size_t &bytesRead)
++        {
+             assert(text);
+             
++            const Ch *initial_text = text;
++            size_t node_count = 0;
++
+             // Remove current contents
+             this->remove_all_nodes();
+             this->remove_all_attributes();
+@@ -1397,6 +1427,11 @@ namespace rapidxml
+                 if (*text == 0)
+                     break;
+ 
++                if (node_count > 0 && (Flags & parse_stop_at_next_sibling))
++                {
++                    break;
++                }
++
+                 // Parse and append new child
+                 if (*text == Ch('<'))
+                 {
+@@ -1406,8 +1441,11 @@ namespace rapidxml
+                 }
+                 else
+                     RAPIDXML_PARSE_ERROR("expected <", text);
++
++                ++node_count;
+             }
+ 
++            bytesRead = text-initial_text;
+         }
+ 
+         //! Clears the document by deleting all nodes and clearing the memory pool.
+-- 
+1.9.5.msysgit.0
+
