@@ -1,0 +1,91 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// Copyright 2015 Intel Mobile Communications GmbH All Rights Reserved.
+//
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+//
+///////////////////////////////////////////////////////////////////////////////
+
+/// @file register_tests.cpp
+
+#include "stdafx.h"
+#include <gtest/gtest.h>
+
+#include <xmpp/xmppclient.h>
+#include <xmpp/xmppconfig.h>
+#include <xmpp/xmppregister.h>
+#include <connect/tcpclient.h>
+#include "xmpp_test_config.h"
+
+extern "C"
+{
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#include <safec/safe_lib.h>
+#elif !defined(_WIN32)
+#include <safe_mem_lib.h>
+#include <safe_str_lib.h>
+#endif //APPLE
+}
+
+
+using namespace std;
+using namespace Iotivity;
+using namespace Iotivity::Xmpp;
+
+
+#ifndef DISABLE_SUPPORT_XEP0077
+
+#ifndef DISABLE_SUPPORT_NATIVE_XMPP_CLIENT
+
+TEST(InBandRegistration, XEP0077_Register_Remove)
+{
+    auto remoteTcp = make_shared<TcpConnection>(JABBERDAEMON_TEST_HOST,
+                     JABBERDAEMON_TEST_PORT, g_proxy);
+
+    auto xmlConnection = make_shared<XmppConnection>(
+                             static_pointer_cast<IStreamConnection>(remoteTcp));
+
+    auto streamPromise = make_shared<promise<shared_ptr<IXmppStream>>>();
+    auto streamFuture = streamPromise->get_future();
+
+    XmppConfig config(JabberID(""), "xmpp-dev");
+    config.requireTLSNegotiation();
+    config.requestInBandRegistration();
+
+    auto registrationParams = InBandRegistration::Params::create();
+    registrationParams->setRegistrationParam("username", "unitTestUserName1");
+    registrationParams->setRegistrationParam("password", "unitTestUserName1Password");
+    // TODO: Secure password?
+
+    config.setExtensionConfig(InBandRegistration::extensionName(), registrationParams);
+
+    auto client = XmppClient::create();
+    ASSERT_NO_THROW(client->initiateXMPP(config, xmlConnection, streamPromise));
+
+    shared_ptr<IXmppStream> xmppStream;
+    EXPECT_NO_THROW(xmppStream = streamFuture.get());
+    ASSERT_NE(xmppStream, nullptr);
+
+    xmppStream->whenNegotiated().wait_for(chrono::seconds(5));
+
+}
+
+#endif
+
+#endif

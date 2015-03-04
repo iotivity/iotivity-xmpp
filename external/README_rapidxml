@@ -1,0 +1,2 @@
+RapdidXML is loaded into this build image to simplify the windows build target. The code has a number of patches that differentiate it from the canoncial verison. The patches for RapidXML may be found under the patches subfolder in the project, so it should be possible to automate the download and patching as a build dependency.
+
