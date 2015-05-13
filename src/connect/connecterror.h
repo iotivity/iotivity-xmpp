@@ -46,6 +46,8 @@ namespace Iotivity
                 {
                     ecSuccess = 0,
                     ecTLSNegotiationInProgress = -100,
+                    ecServerClosedStream = -101,
+
                     ecNotSupported      = -1000, ///< Operation not supported (generally by connection)
                     ecXMLParserError    = -1001, ///< Invalid or malformed XML body payload
                     ecUnknownSID        = -1002, ///< SID on BOSH message response invalid or unknown
@@ -80,7 +82,8 @@ namespace Iotivity
                     ecStanzaTooLong = -1030,
                     ecStreamResourceNotBound = -1031,
                     ecAttemptToRestartBoundStream = -1032,
-                    ecErrorEncodingNonce = -1033
+                    ecErrorEncodingNonce = -1033,
+
                 };
 
             public:

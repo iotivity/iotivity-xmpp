@@ -187,6 +187,12 @@ namespace Iotivity
                     try
                     {
                         string payloadStr = "</stream:stream>";
+
+                        WITH_LOG_WRITES
+                        (
+                            dout << payloadStr << endl;
+                        )
+
                         m_streamConnection->send(ByteBuffer(&payloadStr[0], payloadStr.size()));
                     }
                     catch (...) {}
@@ -603,6 +609,8 @@ namespace Iotivity
                     {
                         try
                         {
+                            onConnected().fire(XmppConnectedEvent(
+                                                   connect_error::ecUnableToStartSession));
                             m_negotiatedPromise.set_exception(make_exception_ptr(
                                                                   connect_error(connect_error::ecUnableToStartSession)));
                         }
@@ -616,12 +624,16 @@ namespace Iotivity
                     {
                         try
                         {
+                            onConnected().fire(XmppConnectedEvent(
+                                                   connect_error::ecUnableToBindUser));
                             m_boundPromise.set_exception(make_exception_ptr(
                                                              connect_error(connect_error::ecUnableToBindUser)));
                         }
                         catch (...)
                         {}
                     }
+
+                    onClosed().fire(XmppClosedEvent(connect_error::SUCCESS));
                 }
 
                 shared_future<void> &whenNegotiated() { return m_negotiated; }
@@ -959,6 +971,8 @@ namespace Iotivity
                                         doc->appendChild(message);
                                         sendMessage(move(message));
 
+                                        onConnected().fire(XmppConnectedEvent(
+                                                               connect_error::SUCCESS));
                                         m_boundPromise.set_value(m_boundJabberId);
                                     }
                                     else
@@ -1008,6 +1022,8 @@ namespace Iotivity
                     }
                     else if (m_saslNegotiated && (!m_config.isRequiringTLS() || m_tlsNegotiated))
                     {
+                        // NOTE: We will wait till the stream is bound before signaling the
+                        //       connected state.
                         m_negotiatedPromise.set_value();
                     }
                 }
@@ -1064,6 +1080,9 @@ namespace Iotivity
                         string xmlns;
                         if (proceed->getAttribute("xmlns", xmlns) && xmlns != XMPP_TLS_NAMESPACE)
                         {
+                            onConnected().fire(XmppConnectedEvent(
+                                                   connect_error::ecTlsNegotationFailure));
+
                             m_negotiatedPromise.set_exception(make_exception_ptr(
                                                                   connect_error(connect_error::ecTlsNegotationFailure)));
 
@@ -1103,6 +1122,8 @@ namespace Iotivity
                         m_connection->async_send(doc, IXmppConnection::SendCallback());
                     }
 
+                    onConnected().fire(XmppConnectedEvent(connect_error::ecTlsNegotationFailure));
+
                     m_negotiatedPromise.set_exception(make_exception_ptr(
                                                           connect_error(connect_error::ecTlsNegotationFailure)));
                     close();
@@ -1132,6 +1153,7 @@ namespace Iotivity
                     if (mechanismName.size() == 0 && m_serverSASLMechanisms.size() != 0)
                     {
                         // No known SASL mechanisms to negotiate.
+                        onConnected().fire(XmppConnectedEvent(connect_error::ecNoSaslMechanism));
                         m_negotiatedPromise.set_exception(make_exception_ptr(
                                                               connect_error(connect_error::ecNoSaslMechanism)));
                         close();
@@ -1141,6 +1163,7 @@ namespace Iotivity
                     m_mechanism = SaslFactory::createSaslMechanism(mechanismName);
                     if (!m_mechanism)
                     {
+                        onConnected().fire(XmppConnectedEvent(connect_error::ecNoSaslMechanism));
                         m_negotiatedPromise.set_exception(make_exception_ptr(
                                                               connect_error(connect_error::ecNoSaslMechanism)));
                         close();
@@ -1157,6 +1180,8 @@ namespace Iotivity
                             ") over unsecured stream refused by client.";
 
                         )
+                        onConnected().fire(XmppConnectedEvent(
+                                               connect_error::ecInsecureSaslOverInsecureStream));
                         m_negotiatedPromise.set_exception(make_exception_ptr(
                                                               connect_error(connect_error::ecInsecureSaslOverInsecureStream)));
                         close();
@@ -1203,6 +1228,9 @@ namespace Iotivity
                         }
                         else
                         {
+
+                            onConnected().fire(XmppConnectedEvent(
+                                                   connect_error::ecSaslNegotationFailure));
                             m_negotiatedPromise.set_exception(make_exception_ptr(
                                                                   connect_error(connect_error::ecSaslNegotationFailure)));
                             throw runtime_error("base64_failure");
@@ -1316,6 +1344,8 @@ namespace Iotivity
                         // TODO: FAILURE handling.
                         //i->name();
                         //}
+                        onConnected().fire(XmppConnectedEvent(
+                                               connect_error::ecSaslNegotationFailure));
                         m_negotiatedPromise.set_exception(make_exception_ptr(
                                                               connect_error(connect_error::ecSaslNegotationFailure)));
 
@@ -1374,6 +1404,7 @@ namespace Iotivity
 
                 void failSasl()
                 {
+                    onConnected().fire(XmppConnectedEvent(connect_error::ecSaslNegotationAborted));
                     m_negotiatedPromise.set_exception(make_exception_ptr(
                                                           connect_error(connect_error::ecSaslNegotationAborted)));
 
@@ -1499,7 +1530,7 @@ namespace Iotivity
             bool m_shutdown;
             set<shared_ptr<IXmppStream>> m_streams;
             XmppClientRunner m_runner;
-            SyncEvent<XmppStreamCreatedEvent> m_streamCreated;
+            OneShotSyncEvent<XmppStreamCreatedEvent> m_streamCreated;
         };
         /// @endcond
 
@@ -1662,6 +1693,11 @@ namespace Iotivity
                         }
                         else
                         {
+                            if (stream)
+                            {
+                                stream->onClosed().fire(XmppClosedEvent(
+                                                            connect_error::ecServerClosedStream));
+                            }
                             remoteServer->close();
                         }
 

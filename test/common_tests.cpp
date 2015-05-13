@@ -1589,5 +1589,49 @@ TEST(SyncNotifier_Tests, SyncEvent)
 
     EXPECT_EQ(grabbedVal1, 41);
     EXPECT_EQ(grabbedVal2, 43);
+}
+
+
+TEST(SyncNotifier_Tests, OneShot_SyncEvent)
+{
+    struct EventType
+    {
+        EventType(int eventData): m_eventData(eventData) {}
+        int m_eventData;
+    };
+
+    struct SyncEventProvider
+    {
+            SyncEventProvider(): m_mutex(), m_event(m_mutex) {}
+            SyncEvent<EventType> &event() { return m_event; }
+
+            void testSignal(int val)
+            {
+                EventType e(val);
+                m_event.fire(e);
+            }
+
+        private:
+            std::recursive_mutex m_mutex;
+            OneShotSyncEvent<EventType> m_event;
+    } testProvider;
+
+    int grabbedVal1 = 0;
+    auto testCallback1 = [&grabbedVal1](EventType & e) { grabbedVal1 = e.m_eventData; };
+    typedef Iotivity::NotifySyncFunc<EventType, decltype(testCallback1)> FuncNotify1;
+
+    auto func1 = make_shared<FuncNotify1>(testCallback1);
+
+    testProvider.event() += func1;
+
+    EXPECT_EQ(grabbedVal1, 0);
+
+    testProvider.testSignal(41);
+
+    EXPECT_EQ(grabbedVal1, 41);
+
+    testProvider.testSignal(45);
+
+    EXPECT_EQ(grabbedVal1, 41);
 
 }

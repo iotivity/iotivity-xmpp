@@ -291,6 +291,12 @@ namespace Iotivity
 
             void fire(_ObservableT &e)
             {
+                sendNotification(e);
+            }
+
+        protected:
+            virtual void sendNotification(_ObservableT &e)
+            {
                 std::set<notifier_type> callbacks;
                 {
                     std::lock_guard<_MutexT> lock(m_mutex);
@@ -302,9 +308,44 @@ namespace Iotivity
                 }
             }
 
+        protected:
+            _MutexT &mutex() { return m_mutex; }
+
         private:
             _MutexT &m_mutex;
             std::set<notifier_type> m_notifiers;
+    };
+
+
+    /// @brief A SyncEvent which is guaranteed to only make one callback to signal the current
+    ///        state of a one-shot signal.
+    template <typename _ObservableT, typename _MutexT = std::recursive_mutex>
+    struct OneShotSyncEvent: public SyncEvent<_ObservableT, _MutexT>
+    {
+            OneShotSyncEvent() = delete;
+            OneShotSyncEvent(_MutexT &mutex):
+                SyncEvent<_ObservableT, _MutexT>(mutex), m_signalCount(0) {}
+            OneShotSyncEvent(const OneShotSyncEvent &) = delete;
+
+            OneShotSyncEvent &operator=(const OneShotSyncEvent &) = delete;
+
+        protected:
+            virtual void sendNotification(_ObservableT &e)
+            {
+                int currentCount;
+                {
+                    std::lock_guard<_MutexT> lock(this->mutex());
+                    currentCount = ++m_signalCount;
+                }
+
+                if (currentCount <= 1)
+                {
+                    this->SyncEvent<_ObservableT, _MutexT>::sendNotification(e);
+                }
+            }
+
+        private:
+            unsigned int m_signalCount;
     };
 
 }
