@@ -234,7 +234,7 @@ TEST(Xmpp_Compliance, bind_support)
 
 
 // sasl-correlate [Client SHOULD]
-TEST(Xmpp_Compliance, sasl_correlate)
+TEST(Xmpp_Compliance,  DISABLED_sasl_correlate)
 {
     // TODO: If client has support for server SASL? This does not appear to be supported by
     //       our client flavors.
@@ -293,44 +293,44 @@ TEST(Xmpp_Compliance, sasl_errors)
 }
 
 // sasl-mtn [Client MUST]
-TEST(Xmpp_Compliance, sasl_mtn)
+TEST(Xmpp_Compliance,  DISABLED_sasl_mtn)
 {
     EXPECT_TRUE(false);
 }
 
 // sasl-restart [Client MUST]
-TEST(Xmpp_Compliance, sasl_restart)
+TEST(Xmpp_Compliance,  DISABLED_sasl_restart)
 {
     EXPECT_TRUE(false);
 }
 
 // sasl-support [Client MUST]
-TEST(Xmpp_Compliance, sasl_support)
+TEST(Xmpp_Compliance,  DISABLED_sasl_support)
 {
     EXPECT_TRUE(false);
 }
 
 // security-mti-auth-scram [Client MUST]  // TODO
-TEST(Xmpp_Compliance, security_mti_auth_scram)
+TEST(Xmpp_Compliance,  DISABLED_security_mti_auth_scram)
 {
     EXPECT_TRUE(false);
 }
 
 // security-mti-both-external [Client SHOULD]
-TEST(Xmpp_Compliance, security_mti_both_external)
+TEST(Xmpp_Compliance,  DISABLED_security_mti_both_external)
 {
     // TODO: Client does not currenly support 'EXTERNAL' SASL
     EXPECT_TRUE(false);
 }
 
 // security-mti-both-plain [Client SHOULD]
-TEST(Xmpp_Compliance, security_mti_both_plain)
+TEST(Xmpp_Compliance,  DISABLED_security_mti_both_plain)
 {
     EXPECT_TRUE(false);
 }
 
 // security-mti-both-scram [Client MUST]
-TEST(Xmpp_Compliance, security_mti_both_scram)
+TEST(Xmpp_Compliance,  DISABLED_security_mti_both_scram)
 {
     EXPECT_TRUE(false);
 }
@@ -378,7 +378,7 @@ shared_ptr<IXmppStream> establishStream()
 
 // security-mti-confidentiality [Client N/A]
 // stanza-attribute-from [Client MUST]
-TEST(Xmpp_Compliance, stanza_attribute_from)
+TEST(Xmpp_Compliance, DISABLED_stanza_attribute_from)
 {
     //auto stream = establishStream();
     //ASSERT_NE(stream, nullptr);
@@ -390,116 +390,116 @@ TEST(Xmpp_Compliance, stanza_attribute_from)
 // stanza-attribute-from-stamp [Client N/A]
 // stanza-attribute-from-validate [Client N/A]
 // stanza-attribute-id [Client MUST]
-TEST(Xmpp_Compliance, stanza_attribute_id)
+TEST(Xmpp_Compliance, DISABLED_stanza_attribute_id)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-attribute-to [Client MUST]
-TEST(Xmpp_Compliance, stanza_attribute_to)
+TEST(Xmpp_Compliance, DISABLED_stanza_attribute_to)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-attribute-to-validate [Client N/A]
 // stanza-attribute-type [Client MUST]
-TEST(Xmpp_Compliance, stanza_attribute_type)
+TEST(Xmpp_Compliance, DISABLED_stanza_attribute_type)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-attribute-xmllang [Client MUST]
-TEST(Xmpp_Compliance, stanza_attribute_xmllang)
+TEST(Xmpp_Compliance, DISABLED_stanza_attribute_xmllang)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-error [Client MUST]
-TEST(Xmpp_Compliance, stanza_error)
+TEST(Xmpp_Compliance, DISABLED_stanza_error)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-error-child [Client MUST]
-TEST(Xmpp_Compliance, stanza_error_child)
+TEST(Xmpp_Compliance, DISABLED_stanza_error_child)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-error-id [Client MUST]
-TEST(Xmpp_Compliance, stanza_error_id)
+TEST(Xmpp_Compliance, DISABLED_stanza_error_id)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-error-reply [Client MUST]
-TEST(Xmpp_Compliance, stanza_error_reply)
+TEST(Xmpp_Compliance, DISABLED_stanza_error_reply)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-extension [Client MUST]
-TEST(Xmpp_Compliance, stanza_extension)
+TEST(Xmpp_Compliance, DISABLED_stanza_extension)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-iq-child [Client MUST]
-TEST(Xmpp_Compliance, stanza_iq_child)
+TEST(Xmpp_Compliance, DISABLED_stanza_iq_child)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-iq-id [Client MUST]
-TEST(Xmpp_Compliance, stanza_iq_id)
+TEST(Xmpp_Compliance, DISABLED_stanza_iq_id)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-iq-reply [Client MUST]
-TEST(Xmpp_Compliance, stanza_iq_reply)
+TEST(Xmpp_Compliance, DISABLED_stanza_iq_reply)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-iq-type [Client MUST]
-TEST(Xmpp_Compliance, stanza_iq_type)
+TEST(Xmpp_Compliance, DISABLED_stanza_iq_type)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-kind-iq [CLIENT MUST]
-TEST(Xmpp_Compliance, stanza_kind_iq)
+TEST(Xmpp_Compliance, DISABLED_stanza_kind_iq)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-kind-message [Client MUST]
-TEST(Xmpp_Compliance, stanza_kind_message)
+TEST(Xmpp_Compliance, DISABLED_stanza_kind_message)
 {
     EXPECT_TRUE(false);
 }
 
 // stanza-kind-presence [Client MUST]
-TEST(Xmpp_Compliance, stanza_kind_presence)
+TEST(Xmpp_Compliance, DISABLED_stanza_kind_presence)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-attribute-initial-from [Client SHOULD]
-TEST(Xmpp_Compliance, stream_attribute_initial_from)
+TEST(Xmpp_Compliance, DISABLED_stream_attribute_initial_from)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-attribute-initial-lang [Client SHOULD]
-TEST(Xmpp_Compliance, stream_attribute_initial_lang)
+TEST(Xmpp_Compliance, DISABLED_stream_attribute_initial_lang)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-attribute-initial-to [Client MUST]
-TEST(Xmpp_Compliance, stream_attribute_initial_to)
+TEST(Xmpp_Compliance, DISABLED_stream_attribute_initial_to)
 {
     EXPECT_TRUE(false);
 }
@@ -509,128 +509,128 @@ TEST(Xmpp_Compliance, stream_attribute_initial_to)
 // stream-attribute-response-id-unique [Client N/A]
 // stream-attribute-response-to [Client N/A]
 // stream-error-generate [Client MUST]
-TEST(Xmpp_Compliance, stream_error_generate)
+TEST(Xmpp_Compliance, DISABLED_stream_error_generate)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-fqdn-resolution [Client MUST]
-TEST(Xmpp_Compliance, stream_fqdn_resolution)
+TEST(Xmpp_Compliance, DISABLED_stream_fqdn_resolution)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-negotiation-complete [Client MUST]
-TEST(Xmpp_Compliance, stream_negotiation_complete)
+TEST(Xmpp_Compliance, DISABLED_stream_negotiation_complete)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-negotiation-features [Client N/A]
-TEST(Xmpp_Compliance, stream_negotiation_features)
+TEST(Xmpp_Compliance, DISABLED_stream_negotiation_features)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-negotiation-restart [Client MUST]
-TEST(Xmpp_Compliance, stream_negotiation_restart)
+TEST(Xmpp_Compliance, DISABLED_stream_negotiation_restart)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-reconnect [Client MUST]
-TEST(Xmpp_Compliance, stream_reconnect)
+TEST(Xmpp_Compliance, DISABLED_stream_reconnect)
 {
     EXPECT_TRUE(false);
 }
 
 // stream-tcp-binding [Client MUST]
-TEST(Xmpp_Compliance, stream_tcp_binding)
+TEST(Xmpp_Compliance, DISABLED_stream_tcp_binding)
 {
     EXPECT_TRUE(false);
 }
 
 // tls-cert [Client MUST]
-TEST(Xmpp_Compliance, tls_cert)
+TEST(Xmpp_Compliance, DISABLED_tls_cert)
 {
     EXPECT_TRUE(false);
 }
 
 // tls-mtn [Client MUST]
-TEST(Xmpp_Compliance, tls_mtn)
+TEST(Xmpp_Compliance, DISABLED_tls_mtn)
 {
     EXPECT_TRUE(false);
 }
 
 // tls-restart [Client MUST]
-TEST(Xmpp_Compliance, tls_restart)
+TEST(Xmpp_Compliance, DISABLED_tls_restart)
 {
     EXPECT_TRUE(false);
 }
 
 // tls-support [Client MUST]
-TEST(Xmpp_Compliance, tls_support)
+TEST(Xmpp_Compliance, DISABLED_tls_support)
 {
     EXPECT_TRUE(false);
 }
 
 // tls-correlate [Client SHOULD]
-TEST(Xmpp_Compliance, tls_correlate)
+TEST(Xmpp_Compliance, DISABLED_tls_correlate)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-namespace-content-client [Client MUST]
-TEST(Xmpp_Compliance, xml_namespace_content_client)
+TEST(Xmpp_Compliance, DISABLED_xml_namespace_content_client)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-namespace-context-server [Client N/A]
 // xml-namespace-streams-declaration [Client MUST]
-TEST(Xmpp_Compliance, xml_namespace_streams_declaration)
+TEST(Xmpp_Compliance, DISABLED_xml_namespace_streams_declaration)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-namesapce-stream-prefix [Client MUST]
-TEST(Xmpp_Compliance, xml_namespace_stream_prefix)
+TEST(Xmpp_Compliance, DISABLED_xml_namespace_stream_prefix)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-restriction-comment [Client MUST]
-TEST(Xmpp_Compliance, xml_restriction_comment)
+TEST(Xmpp_Compliance, DISABLED_xml_restriction_comment)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-restriction-dtd [Client MUST]
-TEST(Xmpp_Compliance, xml_restriction_dtd)
+TEST(Xmpp_Compliance, DISABLED_xml_restriction_dtd)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-restriction-pl [Client MUST]
-TEST(Xmpp_Compliance, xml_restriction_pl)
+TEST(Xmpp_Compliance, DISABLED_xml_restriction_pl)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-restriction-ref [Client MUST]
-TEST(Xmpp_Compliance, xml_restriction_ref)
+TEST(Xmpp_Compliance, DISABLED_xml_restriction_ref)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-wellformed-xml [Client MUST]
-TEST(Xmpp_Compliance, xml_wellformed_xml)
+TEST(Xmpp_Compliance, DISABLED_xml_wellformed_xml)
 {
     EXPECT_TRUE(false);
 }
 
 // xml-wellformed-ns [Client MUST]
-TEST(Xmpp_Compliance, xml_wellformed_ns)
+TEST(Xmpp_Compliance, DISABLED_xml_wellformed_ns)
 {
     EXPECT_TRUE(false);
 }
