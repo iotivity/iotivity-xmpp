@@ -72,8 +72,8 @@ namespace Iotivity
                 typedef std::map<std::string, ActiveQuery> Queries;
                 Queries m_queries;
 
-                SyncEvent<XmppConnectedEvent> m_connected;
-                SyncEvent<XmppClosedEvent> m_closed;
+                OneShotSyncEvent<XmppConnectedEvent> m_connected;
+                OneShotSyncEvent<XmppClosedEvent> m_closed;
         };
     }
 }

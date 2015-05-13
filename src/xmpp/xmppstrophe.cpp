@@ -119,8 +119,8 @@ namespace Iotivity
 
         static StanzaPtr convertXmlToStanza(const XML::XMLElement::Ptr &element, _xmpp_ctx_t *ctx)
         {
-            // NOTE: We are ignoring namespace features here for simplicitly. If they turn out to be
-            //       needed, add them.
+            // NOTE: We are ignoring namespace features here for simplicitly. If they turn out to
+            //       be needed, add them.
             if (element && ctx)
             {
                 _xmpp_stanza_t *stanzaPtr = xmpp_stanza_new(ctx);
@@ -325,66 +325,122 @@ namespace Iotivity
                                              [](xmpp_conn_t *const conn, const xmpp_conn_event_t event, const int error,
                                                 xmpp_stream_error_t *const stream_error, void *const userdata)
                 {
-                    if (userdata)
+                    if (!userdata)
                     {
-                        auto *context = reinterpret_cast<call_context *>(userdata);
-                        try
-                        {
-                            WITH_LOG_INFO
-                            (
-                                dout << "CONNECT: EVENT: " << event << " ERROR: " << error << endl;
-                            )
+                        return;
+                    }
+                    auto *context = reinterpret_cast<call_context *>(userdata);
 
-                            if (error != XMPP_EOK)
+                    if (!context->m_self || !context->m_self->m_stream)
+                    {
+                        return;
+                    }
+
+                    shared_ptr<IXmppStream> stream = context->m_self->m_stream;
+
+                    switch (event)
+                    {
+                        case XMPP_CONN_CONNECT:
+                            try
                             {
-                                // TODO: Improve connect error management here
-                                throw connect_error::ecInvalidStream;
+                                WITH_LOG_INFO
+                                (
+                                    dout << "CONNECT: EVENT: " << event <<
+                                    " ERROR: " << error << endl;
+                                )
+
+                                if (error != XMPP_EOK)
+                                {
+                                    // TODO: Improve connect error management here
+                                    connect_error errorCode = connect_error::ecInvalidStream;
+                                    stream->onConnected().fire(XmppConnectedEvent(
+                                                                   connect_error::ecInvalidStream));
+                                    throw errorCode;
+                                }
+
+                                xmpp_handler_add(conn,
+                                                 [](xmpp_conn_t *const conn, xmpp_stanza_t *const stanza,
+                                                    void *const userdata) -> int
+                                {
+                                    (void)conn;
+                                    (void)stanza;
+                                    if (conn && stanza && userdata)
+                                    {
+                                        try
+                                        {
+                                            XmppStropheConnection *const self =
+                                            reinterpret_cast<XmppStropheConnection *>(
+                                                userdata);
+
+                                            self->handleStanza(stanza);
+                                        }
+                                        catch (...)
+                                        {
+                                            // C routine. No exception may leave
+                                            // this callback.
+                                        }
+                                    }
+                                    // TODO: destructor synchronization
+
+                                    return 1;
+                                }, nullptr, nullptr, nullptr, context->m_self);
+
+                                stream->onConnected().fire(XmppConnectedEvent(
+                                                               connect_error::SUCCESS));
+                                context->m_connectPromise.set_value();
                             }
-
-                            xmpp_handler_add(conn,
-                                             [](xmpp_conn_t *const conn, xmpp_stanza_t *const stanza,
-                                                void *const userdata) -> int
+                            catch (...)
                             {
-                                (void)conn;
-                                (void)stanza;
-                                if (conn && stanza && userdata)
+                                // C call-chain. Catch all exceptions.
+                                if (context)
                                 {
                                     try
                                     {
-                                        XmppStropheConnection *const self =
-                                        reinterpret_cast<XmppStropheConnection *>(
-                                            userdata);
-
-                                        self->handleStanza(stanza);
+                                        stream->onConnected().fire(XmppConnectedEvent(
+                                                                       connect_error::ecInvalidStream));
+                                        context->m_connectPromise.set_exception(
+                                            current_exception());
                                     }
-                                    catch (...)
-                                    {
-                                        // C routine. No exception may leave this callback.
-                                    }
+                                    catch (...) {}
                                 }
-                                // TODO: destructor synchronization
-
-                                return 1;
-                            }, nullptr, nullptr, nullptr, context->m_self);
-
-                            context->m_connectPromise.set_value();
-                        }
-                        catch (...)
-                        {
-                            // C call-chain. Catch all exceptions.
-                            if (context)
-                            {
-                                try
-                                {
-                                    context->m_connectPromise.set_exception(
-                                        current_exception());
-                                }
-                                catch (...) {}
                             }
-                        }
+                            break;
+                        case XMPP_CONN_DISCONNECT:
+                            try
+                            {
+                                WITH_LOG_INFO
+                                (
+                                    dout << "DISCONNECT: EVENT: " << event <<
+                                    " ERROR: " << error << endl;
+                                )
 
+                                stream->onClosed().fire(XmppClosedEvent(
+                                                            connect_error::SUCCESS));
+                            }
+                            catch (...) {}
+                            break;
+                        case XMPP_CONN_FAIL:
+                            try
+                            {
+                                // This does not appear to be sent by any existing libstrophe
+                                // component, so it is not clear what it is meant to do. We
+                                // will log receipt but ignore it.
+                                WITH_LOG_WARNINGS
+                                (
+                                    dout << "XMPP_CONN_FAIL Received. Unexpected. [IGNORED]" << endl;
+                                )
+                            }
+                            catch (...) {}
+                            break;
+                    }
+
+                    try
+                    {
+                        // We do not expect an exception from this delete, but let's
+                        // not take chances.
                         delete context;
                     }
+                    catch (...) {}
                 }, context);
 
                 if (result != XMPP_EOK)
@@ -408,6 +464,11 @@ namespace Iotivity
                 xmpp_disconnect(m_conn);
 
                 // TODO: Wait for disconnect to stream.
+
+                if (m_stream)
+                {
+                    m_stream->onClosed().fire(XmppClosedEvent(connect_error::SUCCESS));
+                }
 
                 lock_guard<recursive_mutex> lock(m_mutex);
                 xmpp_conn_release(m_conn);
@@ -559,7 +620,7 @@ namespace Iotivity
             set<shared_ptr<IXmppStream>> m_streams;
             promise<void> m_runStopPromise;
             future<void> m_runStopped;
-            SyncEvent<XmppStreamCreatedEvent> m_streamCreated;
+            OneShotSyncEvent<XmppStreamCreatedEvent> m_streamCreated;
         };
         /// @endcond
 

@@ -222,15 +222,48 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
     config.setSaslConfig("PLAIN", plainConfig);
 
     auto client = XmppClient::create();
-    promise<void> streamCallbackPromise, closedCallbackPromise;
+    promise<void> streamCallbackPromise, openCallbackPromise, closedCallbackPromise;
     future<void> streamCallbackFuture = streamCallbackPromise.get_future(),
+                 openCallbackFuture = openCallbackPromise.get_future(),
                  closedCallbackFuture = closedCallbackPromise.get_future();
 
-    auto connectedFunc = [](XmppConnectedEvent & connected)
+    auto connectedFunc = [&openCallbackPromise](XmppConnectedEvent & connected)
     {
+        if (connected.result().succeeded())
+        {
+            openCallbackPromise.set_value();
+        }
+        else
+        {
+            try
+            {
+                cout << "CLOSED FAILURE " << connected.result().toString() << endl;
+                throw connected.result();
+            }
+            catch (const connect_error &)
+            {
+                openCallbackPromise.set_exception(current_exception());
+            }
+        }
     };
-    auto closedFunc = [](XmppClosedEvent & connected)
+    auto closedFunc = [&closedCallbackPromise](XmppClosedEvent & closed)
     {
+        if (closed.result().succeeded())
+        {
+            closedCallbackPromise.set_value();
+        }
+        else
+        {
+            try
+            {
+                cout << "CLOSED FAILURE " << closed.result().toString() << endl;
+                throw closed.result();
+            }
+            catch (connect_error)
+            {
+                closedCallbackPromise.set_exception(current_exception());
+            }
+        }
     };
     auto streamConnectedCallback = make_shared<NotifySyncFunc<XmppConnectedEvent,
          decltype(connectedFunc)>>(connectedFunc);
@@ -260,17 +293,45 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
 
     ASSERT_NO_THROW(client->initiateXMPP(config, xmlConnection));
 
-    streamCallbackFuture.get();
+    auto status1 = streamCallbackFuture.wait_for(chrono::seconds(5));
 
-    this_thread::sleep_for(chrono::milliseconds(5000));
+    EXPECT_EQ(status1, future_status::ready);
+    if (status1 == future_status::ready)
+    {
+        ASSERT_NO_THROW(streamCallbackFuture.get());
+
+        auto status2 = openCallbackFuture.wait_for(chrono::seconds(5));
+        EXPECT_EQ(status2, future_status::ready);
+        if (status2 == future_status::ready)
+        {
+            ASSERT_NO_THROW(openCallbackFuture.get());
+
+            cout << "OPENED" << endl;
+
+            EXPECT_NE(stream, nullptr);
+            if (stream)
+            {
+                stream->close();
+            }
+
+            auto status3 = closedCallbackFuture.wait_for(chrono::seconds(5));
+            EXPECT_EQ(status3, future_status::ready);
+            if (status3 == future_status::ready)
+            {
+                ASSERT_NO_THROW(closedCallbackFuture.get());
+
+                cout << "CLOSED" << endl;
+            }
+        }
+    }
 
     client->onStreamCreated() -= streamCreatedCallback;
-    //closedCallbackFuture.get();
     if (stream)
     {
         stream->onConnected() -= streamConnectedCallback;
         stream->onClosed() -= streamClosedCallback;
     }
+    cout << "EXITING" << endl;
 }
 
 
