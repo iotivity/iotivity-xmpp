@@ -38,26 +38,47 @@ namespace Iotivity
         class IXmppStream;
         class IXmppConnection;
 
-        struct XmppStreamCreatedEvent
+        struct XmppBasicEvent
+        {
+                XmppBasicEvent(const connect_error &errorResult): m_result(errorResult) {}
+
+                connect_error result() const { return m_result; }
+
+            private:
+                connect_error m_result;
+        };
+
+        struct XmppStreamCreatedEvent: public XmppBasicEvent
         {
                 XmppStreamCreatedEvent() = delete;
                 XmppStreamCreatedEvent(std::shared_ptr<IXmppStream> stream,
                                        std::shared_ptr<IXmppConnection> remoteServer):
-                    m_result(connect_error::SUCCESS), m_stream(stream), m_remoteServer(remoteServer)
+                    XmppBasicEvent(connect_error::SUCCESS), m_stream(stream),
+                    m_remoteServer(remoteServer)
                 {}
                 XmppStreamCreatedEvent(const connect_error &errorResult,
                                        std::shared_ptr<IXmppConnection> remoteServer):
-                    m_result(errorResult), m_stream(), m_remoteServer(remoteServer)
+                    XmppBasicEvent(errorResult), m_stream(), m_remoteServer(remoteServer)
                 {}
 
-
-                connect_error result() const { return m_result; }
                 std::shared_ptr<IXmppStream> stream() const { return m_stream; }
                 std::shared_ptr<IXmppConnection> remoteServer() const { return m_remoteServer; }
             private:
-                connect_error m_result;
                 std::shared_ptr<IXmppStream> m_stream;
                 std::shared_ptr<IXmppConnection> m_remoteServer;
         };
+
+        struct XmppConnectedEvent: public XmppBasicEvent
+        {
+            XmppConnectedEvent() = delete;
+            XmppConnectedEvent(const connect_error &errorResult): XmppBasicEvent(errorResult) {}
+        };
+
+        struct XmppClosedEvent: public XmppBasicEvent
+        {
+            XmppClosedEvent() = delete;
+            XmppClosedEvent(const connect_error &errorResult): XmppBasicEvent(errorResult) {}
+        };
+
     }
 }
