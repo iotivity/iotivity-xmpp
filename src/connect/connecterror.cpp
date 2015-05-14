@@ -106,7 +106,7 @@ namespace Iotivity
                    (errorType() == etASIOError() && !m_asioError) ||
                    (errorType() == etSOCKS5Error() && errorCode() == 0x00) ||
 #endif
-                (errorType() == etConnectError() && (errorCode() == ecSuccess));
+                   (errorType() == etConnectError() && (errorCode() == ecSuccess));
         }
 
         connect_error &connect_error::operator=(ConnectErrorCode errorCode)

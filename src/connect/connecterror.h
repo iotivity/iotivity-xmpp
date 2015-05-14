@@ -28,10 +28,16 @@
 #include "../include/xmpp_feature_flags.h"
 #include "../common/errorabstraction.h"
 
+#include "../include/ccfxmpp.h"
+
 #ifndef DISABLE_SUPPORT_NATIVE_XMPP_CLIENT
 #include <asio/error_code.hpp>
 #endif
 
+
+#ifdef _WIN32
+class XMPP_API std::error_code;
+#endif
 
 namespace Iotivity
 {
@@ -39,7 +45,7 @@ namespace Iotivity
     {
         /// @brief The error code class for errors resulting from asio, HTTP or XMPP connection
         ///        errors. Aggregates these error types into a single success/failure composite.
-        class connect_error : public LocalError
+        class XMPP_API connect_error : public LocalError
         {
             public:
                 enum ConnectErrorCode : int32_t

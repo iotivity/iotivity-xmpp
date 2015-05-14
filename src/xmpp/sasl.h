@@ -29,12 +29,20 @@
 #include "../common/bufferencrypt.h"
 #include "xmppinterfaces.h"
 
+#include "../include/ccfxmpp.h"
+
 #include <string>
 #include <functional>
 #include <list>
 #include <memory>
 #include <map>
 #include <mutex>
+
+#ifdef _WIN32
+XMPP_TEMPLATE template class XMPP_API std::basic_string<char, std::char_traits<char>,
+        std::allocator<char>>;
+#endif
+
 
 namespace Iotivity
 {
@@ -116,7 +124,7 @@ namespace Iotivity
         /// @brief Provides a default implementation of the ISaslUserPasswordParams interface.
         ///
         /// Provides user-name and password to a SASL mechanism that requires int.
-        struct UserPasswordParams: public ISaslParams
+        struct XMPP_API UserPasswordParams: public ISaslParams
         {
                 virtual std::string authenticationIdentity() const override
                 {
@@ -152,7 +160,7 @@ namespace Iotivity
                 ///
                 /// Should be passed to an XMPPConfig object to provide SASL parameters to SaslPlain
                 /// as needed.
-                struct Params: public UserPasswordParams
+                struct XMPP_API Params: public UserPasswordParams
                 {
                         static std::shared_ptr<Params> create(const std::string &authenticationIdentity,
                                                               const SecureBuffer &password);
@@ -215,7 +223,7 @@ namespace Iotivity
                 ///
                 /// Should be passed to an XMPPConfig object to provide SASL parameters to
                 /// SaslScramSha1 as needed.
-                struct Params: public UserPasswordParams
+                struct XMPP_API Params: public UserPasswordParams
                 {
                         static std::shared_ptr<Params> create(const std::string &authenticationIdentity,
                                                               const SecureBuffer &password);

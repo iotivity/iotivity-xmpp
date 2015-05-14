@@ -49,8 +49,8 @@ extern "C"
 {
 #endif
 
-typedef void *const XMPP_LIB_(handle_t);
-typedef void *const XMPP_LIB_(connection_handle_t);
+typedef void *XMPP_LIB_(handle_t);
+typedef void *XMPP_LIB_(connection_handle_t);
 
 typedef enum XMPP_LIB_(status)
 {
@@ -62,12 +62,30 @@ typedef enum XMPP_LIB_(status)
 typedef enum XMPP_LIB_(error_code)
 {
     XMPP_ERR_OK = 0,
+    XMPP_ERR_CLIENT_DISCONNECTED,
+    XMPP_ERR_SERVER_DISCONNECTED,
+
+    XMPP_ERR_HOST_CONNECTION_FAILED,
+    XMPP_ERR_STREAM_NOT_NEGOTIATED,
 
     XMPP_ERR_FAIL,                          ///> Default error. Generally indicates a coding error.
     XMPP_ERR_INTERNAL_ERROR,
+    XMPP_ERR_FEATURE_NOT_SUPPORTED,
+    XMPP_ERR_BOSH_ERROR,                    ///> Error establishing BOSH connection
+    XMPP_ERR_CONNECT_ERROR,                 ///> Error establishing XMPP connection
+    XMPP_ERR_PROXY_CONNECT_ERROR,           ///> Error establishing proxy connection
+
+    XMPP_ERR_AUTHENTICATION_FAILED,
+    XMPP_ERR_TLS_NEGOTIATION_FAILED,
+    XMPP_ERR_SASL_NEGOTIATION_FAILED,
 
     XMPP_ERR_INVALID_HANDLE,
     XMPP_ERR_INVALID_PARAMETER,
+    XMPP_ERR_INVALID_SERVER_STANZA,
+
+    XMPP_ERR_STREAM_CLOSING_NOT_AVAILABLE,
+
+    XMPP_ERR_REQUEST_ERROR_RESPONSE,
 
     XMPP_ERR_BOSH_NO_SUPPORT,
 
@@ -96,7 +114,7 @@ typedef void (* XMPP_LIB_(disconnected_func_t))(void *const param, XMPP_LIB_(err
 typedef struct XMPP_LIB_(log_callback)
 {
     XMPP_LIB_(log_func_t) on_log;
-    void *const        param;
+    void                 *param;
 } XMPP_LIB_(log_callback_t);
 
 
@@ -104,7 +122,7 @@ typedef struct XMPP_LIB_(connection_callback)
 {
     XMPP_LIB_(connected_func_t)     on_connected;
     XMPP_LIB_(disconnected_func_t)  on_disconnected;
-    void *const                    param;
+    void                           *param;
 } XMPP_LIB_(connection_callback_t);
 
 
@@ -222,45 +240,42 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(close)(XMPP_LIB_(connection_handle_t) connecti
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// XEP-0047 In-Band Bytestreams (IBB)
+// Message Transmission/Receipt
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-typedef void *const XMPP_LIB_(ibb_handle_t);
+typedef const void *XMPP_LIB_(message_context_t);
 
-typedef void (* XMPP_LIB_(ibb_open_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
-        XMPP_LIB_(ibb_handle_t) ibb);
-typedef void (* XMPP_LIB_(ibb_closed_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
-        XMPP_LIB_(ibb_handle_t) ibb);
-typedef void (* XMPP_LIB_(ibb_send_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
-        XMPP_LIB_(ibb_handle_t) ibb, size_t octetsWritten);
-typedef void (* XMPP_LIB_(ibb_recv_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
-        XMPP_LIB_(ibb_handle_t) ibb, const void *const buffer,
-        size_t octetsRead);
+typedef void (* XMPP_LIB_(message_sent_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
+        const void *const toRecipient,
+        const void *const msg, size_t messageOctets);
+typedef void (* XMPP_LIB_(message_recv_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
+        const void *const fromSender,
+        const void *const msg, size_t messageOctets);
 
-typedef struct XMPP_LIB_(ibb_callback)
+typedef struct XMPP_LIB_(message_callback)
 {
-    XMPP_LIB_(ibb_open_func_t)   on_open;
-    XMPP_LIB_(ibb_closed_func_t) on_closed;
-    XMPP_LIB_(ibb_send_func_t)   on_sent;
-    XMPP_LIB_(ibb_recv_func_t)   on_received;
-    void *const                 param;
-} XMPP_LIB_(ibb_callback_t);
+    XMPP_LIB_(message_sent_func_t)  on_sent;
+    XMPP_LIB_(message_recv_func_t)  on_received;
+    void                           *param;
+} XMPP_LIB_(message_callback_t);
 
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(ibb_open)(XMPP_LIB_(connection_handle_t) connection,
-        const char *const to,
-        XMPP_LIB_(ibb_callback_t) callback);
+typedef enum XMPP_LIB_(transmission_options)
+{
+    XMPP_MESSAGE_TRANSMIT_DEFAULT = 0x0
+} XMPP_LIB_(transmission_options_t);
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(ibb_async_send)(XMPP_LIB_(ibb_handle_t) connection,
-        const void *const buffer,
-        const size_t bufferOctets);
 
-// NOTE: buffer must exist until the callback completes. Never call multiple async_recv with
-//       the same buffer in succession as the behavior is indeterminate. Once the callback
-//       completes the buffer may be reused.
-XMPP_LIB_(error_code_t) XMPP_LIB_(ibb_async_recv)(XMPP_LIB_(ibb_handle_t) connection,
-        void *const buffer, const size_t bufferOctets);
+XMPP_LIB_(message_context_t) XMPP_LIB_(message_context_create)(
+    XMPP_LIB_(connection_handle_t) connection,
+    XMPP_LIB_(message_callback_t) callback);
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(ibb_close)(XMPP_LIB_(ibb_handle_t) connection);
+XMPP_LIB_(error_code_t) XMPP_LIB_(send_message)(XMPP_LIB_(message_context_t) ctx,
+        const char *const recipient,
+        const void *const message,
+        const size_t messageOctets,
+        XMPP_LIB_(transmission_options_t) options);
+
+void XMPP_LIB_(message_context_destroy)(XMPP_LIB_(message_context_t) ctx);
 
 #ifdef __cplusplus
 }
