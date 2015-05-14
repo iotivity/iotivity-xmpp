@@ -39,11 +39,15 @@
 #include <xmpp/xmppclient.h>
 #endif
 
+#include <xmpp/xmppconfig.h>
+#include <xmpp/sasl.h>
+
 #include <connect/proxy.h>
 
 #include "ra_xmpp.h"
 
 using namespace std;
+using namespace Iotivity;
 
 
 struct static_init_test
@@ -74,6 +78,39 @@ struct UserIdentity
 {
 
 };
+
+
+struct XmppWrappers
+{
+        static void addWrapper(const void *const wrapper)
+        {
+            std::lock_guard<std::recursive_mutex> lock(mutex());
+            s_wrappers.insert(wrapper);
+        }
+
+        static bool isValidWrapper(const void *const wrapper)
+        {
+            std::lock_guard<std::recursive_mutex> lock(mutex());
+            return s_wrappers.find(wrapper) != s_wrappers.end();
+        }
+
+        static void removeWrapper(const void *const wrapper)
+        {
+            std::lock_guard<std::recursive_mutex> lock(mutex());
+            s_wrappers.erase(wrapper);
+        }
+
+    private:
+        static std::recursive_mutex &mutex()
+        {
+            static std::recursive_mutex s_mutex;
+            return s_mutex;
+        }
+        static std::set<const void *> s_wrappers;
+};
+
+std::set<const void *> XmppWrappers::s_wrappers;
+
 
 struct ContextWrapper
 {
@@ -148,7 +185,10 @@ struct ContextWrapper
         {
         }
 
-        void connect(const std::string &host, const std::string &port, const ProxyConfig &proxy)
+        void connect(void *const handle, const std::string &host, const std::string &port,
+                     const ProxyConfig &proxy, const std::string &userName,
+                     const SecureBuffer &password,  InBandRegister inbandRegistrationAction,
+                     XMPP_LIB_(connection_callback_t) callback)
         {
 #ifdef ENABLE_LIBSTROPHE
             auto xmlConnection = make_shared<XmppStropheConnection>(host, port);
@@ -159,18 +199,141 @@ struct ContextWrapper
                                      static_pointer_cast<IStreamConnection>(remoteTcp));
 #endif // ENABLE_LIBSTROPHE
 
-            auto streamPromise = make_shared<promise<shared_ptr<IXmppStream>>>();
-            auto streamFuture = streamPromise->get_future();
+            XmppConfig config;
+            config.requireTLSNegotiation();
+
+            config.setSaslConfig("SCRAM-SHA-1", SaslScramSha1::Params::create(userName, password));
+            config.setSaslConfig("PLAIN", SaslPlain::Params::create(userName, password));
+
 
             auto client = XmppClient::create();
-            //ASSERT_NO_THROW(client->initiateXMPP(config, xmlConnection, streamPromise));
 
-            shared_ptr<IXmppStream> xmppStream;
-            //EXPECT_NO_THROW(xmppStream = streamFuture.get());
+            auto createdFunc =
+                [handle, callback](XmppStreamCreatedEvent & e)
+            {
+                if (e.result().succeeded())
+                {
+                    //e.stream()->onConnected() += streamConnectedCallback;
+                    //e.stream()->onClosed() += streamClosedCallback;
+                }
+                else
+                {
+                    XMPP_LIB_(error_code_t) errorCode = translateError(e.result());
+                    if (callback.on_connected && XmppWrappers::isValidWrapper(handle))
+                    {
+                        callback.on_connected(callback.param, errorCode, handle);
+                    }
+                }
+            };
 
+            using StreamCreatedFunc = NotifySyncFunc<XmppStreamCreatedEvent, decltype(createdFunc)>;
+            client->onStreamCreated() += make_shared<StreamCreatedFunc>(createdFunc);
+
+            client->initiateXMPP(config, xmlConnection);
+        }
+
+        static XMPP_LIB_(error_code_t) translateError(const connect_error &ce)
+        {
+            XMPP_LIB_(error_code_t) errorCode = XMPP_ERR_FAIL;
+            if (ce.errorType() == connect_error::etConnectError())
+            {
+                switch (ce.errorCode())
+                {
+                    case connect_error::ecSuccess:
+                        errorCode = XMPP_ERR_OK;
+                        break;
+                    case connect_error::ecTLSNegotiationInProgress:
+                    case connect_error::ecStreamResourceNotBound:
+                        errorCode = XMPP_ERR_STREAM_NOT_NEGOTIATED;
+                        break;
+                    case connect_error::ecServerClosedStream:
+                    case connect_error::ecSocketClosed:
+                        errorCode = XMPP_ERR_SERVER_DISCONNECTED;
+                        break;
+                    case connect_error::ecNotSupported:
+                        errorCode =  XMPP_ERR_FEATURE_NOT_SUPPORTED;
+                        break;
+                    case connect_error::ecXMLParserError:
+                    case connect_error::ecUnknownSID:
+                    case connect_error::ecSIDReused:
+                    case connect_error::ecQueryIDAlreadySubmitted:
+                    case connect_error::ecAttemptToRestartBoundStream:
+                        errorCode = XMPP_ERR_INTERNAL_ERROR;
+                        break;
+                    case connect_error::ecWaitMissing:
+                    case connect_error::ecRequestsMissing:
+                        errorCode = XMPP_ERR_BOSH_ERROR;
+                        break;
+                    case connect_error::ecUnableToStartSession:
+                    case connect_error::ecInvalidStream:
+                    case connect_error::ecUnableToBindUser:
+                        errorCode = XMPP_ERR_STREAM_NOT_NEGOTIATED;
+                        break;
+                    case connect_error::ecInvalidPort:
+                        errorCode = XMPP_ERR_HOST_CONNECTION_FAILED;
+                        break;
+                    case connect_error::ecHostNameTooLongForSOCKS5:
+                    case connect_error::ecUnknownSOCKS5AddressType:
+                    case connect_error::ecUserNameTooLongForSOCKS5:
+                    case connect_error::ecPasswordTooLongForSOCKS5:
+                    case connect_error::ecSOCKS5InvalidUserNameOrPassword:
+                    case connect_error::ecProxyTypeNotSupported:
+                        errorCode = XMPP_ERR_PROXY_CONNECT_ERROR;
+                        break;
+                    case connect_error::ecTlsNegotationFailure:
+                        errorCode = XMPP_ERR_TLS_NEGOTIATION_FAILED;
+                        break;
+                    case connect_error::ecSaslNegotationFailure:
+                    case connect_error::ecSaslNegotationAborted:
+                    case connect_error::ecNoSaslMechanism:
+                    case connect_error::ecInsecureSaslOverInsecureStream:
+                    case connect_error::ecErrorEncodingNonce:
+                        errorCode = XMPP_ERR_SASL_NEGOTIATION_FAILED;
+                        break;
+                    case connect_error::ecRegistrationAlreadyRunning:
+                    case connect_error::ecInvalidRegistration:
+                        errorCode = XMPP_ERR_INBAND_REGISTRATION_FAILURE;
+                        break;
+                    case connect_error::ecRequestFailed:
+                        errorCode = XMPP_ERR_REQUEST_ERROR_RESPONSE;
+                        break;
+                    case connect_error::ecExtensionInShutdown:
+                        errorCode = XMPP_ERR_STREAM_CLOSING_NOT_AVAILABLE;
+                        break;
+                    case connect_error::ecSocketConnectError:
+                        errorCode = XMPP_ERR_CONNECT_ERROR;
+                        break;
+                    case connect_error::ecStanzaTranslationError:
+                    case connect_error::ecStanzaTooLong:
+                        errorCode = XMPP_ERR_INVALID_SERVER_STANZA;
+                        break;
+                    case connect_error::ecStreamInShutdown:
+                    default:
+                        break;
+                }
+            }
+            else if (ce.errorType() == connect_error::etCurlError())
+            {
+                errorCode = XMPP_ERR_BOSH_ERROR;
+            }
+            else if (ce.errorType() == connect_error::etHttpError())
+            {
+                errorCode = XMPP_ERR_BOSH_ERROR;
+            }
+            else if (ce.errorType() == connect_error::etSOCKS5Error())
+            {
+                errorCode = XMPP_ERR_PROXY_CONNECT_ERROR;
+            }
+            else if (ce.errorType() == connect_error::etASIOError())
+            {
+                // Fold any ASIO errors (c++ client only) into a generic connect error.
+                errorCode = XMPP_ERR_CONNECT_ERROR;
+            }
+            return errorCode;
         }
     private:
 };
+
 
 extern "C"
 {
@@ -191,6 +354,7 @@ extern "C"
         try
         {
             ContextWrapper *wrapper = new ContextWrapper;
+            XmppWrappers::addWrapper(wrapper);
             return wrapper;
         }
         catch (...) {}
@@ -203,9 +367,12 @@ extern "C"
         {
             if (handle)
             {
-                // TODO: Test for valid wrapper?
                 ContextWrapper *wrapper = reinterpret_cast<ContextWrapper *>(handle);
-                delete wrapper;
+                if (XmppWrappers::isValidWrapper(wrapper))
+                {
+                    XmppWrappers::removeWrapper(wrapper);
+                    delete wrapper;
+                }
             }
         }
         catch (...) {}
@@ -227,13 +394,30 @@ extern "C"
         }
         try
         {
-            // TODO: Test for valid wrapper?
             ContextWrapper *wrapper = reinterpret_cast<ContextWrapper *>(handle);
 
+            if (!XmppWrappers::isValidWrapper(wrapper))
+            {
+                return XMPP_ERR_INVALID_HANDLE;
+            }
+
+            string userName;
+            if (identity->user_name)
+            {
+                userName = identity->user_name;
+            }
+
+            SecureBuffer password;
+            if (identity->password)
+            {
+                string passStr = identity->password;
+                password.setBuffer(passStr.c_str(), passStr.size());
+            }
+
             auto portStr = to_string(host->port);
+            auto proxyType = ProxyConfig::ProxyType::ProxyUndefined;
             if (proxy)
             {
-                auto proxyType = ProxyConfig::ProxyType::ProxyUndefined;
                 switch (proxy->proxy_type)
                 {
                     case XMPP_PROXY_DIRECT_CONNECT:
@@ -243,14 +427,14 @@ extern "C"
                         proxyType = ProxyConfig::ProxyType::ProxySOCKS5;
                         break;
                 }
-                ProxyConfig proxyConfig(proxy->proxy_host, to_string(proxy->proxy_port), proxyType);
-                wrapper->connect(host->host, portStr, proxyConfig);
             }
-            else
-            {
-                ProxyConfig emptyProxy;
-                wrapper->connect(host->host, portStr, emptyProxy);
-            }
+            auto &&proxyConfig = proxy ? ProxyConfig(proxy->proxy_host, to_string(proxy->proxy_port),
+                                 proxyType) :
+                                 ProxyConfig();
+
+            wrapper->connect(handle, host->host, portStr, proxyConfig, userName, password,
+                             identity->inband_registration, callback);
+
             return XMPP_ERR_OK;
         }
         catch (...) {}

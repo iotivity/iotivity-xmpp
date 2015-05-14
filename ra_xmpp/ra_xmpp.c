@@ -298,7 +298,7 @@ void XMPP_LIB_(shutdown)(XMPP_LIB_(handle_t) handle)
         {
             free(ctx->user_context);
         }
-        free(handle);
+        free((void *)handle);
         dec_master_init_counter();
 
         if (master_init_counter() != 0)
@@ -352,38 +352,46 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(close)(XMPP_LIB_(connection_handle_t) connecti
 
 
 
+typedef struct
+{
+    XMPP_LIB_(connection_handle_t)  connection;
+    XMPP_LIB_(message_callback_t)   callback;
+} xmpp_message_ctx_t;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// In-band streaming library functions.
+// Message Transmission/Receipt
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-XMPP_LIB_(error_code_t) XMPP_LIB_(ibb_open)(XMPP_LIB_(connection_handle_t) connection,
-        const char *const to,
-        XMPP_LIB_(ibb_callback_t) callback)
+XMPP_LIB_(message_context_t) XMPP_LIB_(message_context_create)(
+    XMPP_LIB_(connection_handle_t) connection,
+    XMPP_LIB_(message_callback_t) callback)
+{
+    xmpp_message_ctx_t *new_context = calloc(1, sizeof(xmpp_message_ctx_t));
+
+    if (new_context)
+    {
+        new_context->connection = connection;
+        new_context->callback = callback;
+        inc_master_init_counter();
+    }
+    return (XMPP_LIB_(message_context_t))new_context;
+}
+
+XMPP_LIB_(error_code_t) XMPP_LIB_(send_message)(XMPP_LIB_(message_context_t) ctx,
+        const char *const recipient,
+        const void *const message,
+        const size_t messageOctets,
+        XMPP_LIB_(transmission_options_t) options)
 {
     XMPP_LIB_(error_code_t) result = XMPP_ERR_FAIL;
     return result;
 }
 
-XMPP_LIB_(error_code_t) XMPP_LIB_ibb_async_send(XMPP_LIB_(ibb_handle_t) connection,
-        const void *const buffer,
-        const size_t bufferOctets)
+void XMPP_LIB_(message_context_destroy)(XMPP_LIB_(message_context_t) ctx)
 {
-    XMPP_LIB_(error_code_t) result = XMPP_ERR_FAIL;
-    return result;
-}
-
-// NOTE: buffer must exist until the callback completes. Never call multiple async_recv with
-//       the same buffer in succession as the behavior is indeterminate. Once the callback
-//       completes the buffer may be reused.
-XMPP_LIB_(error_code_t) XMPP_LIB_ibb_async_recv(XMPP_LIB_(ibb_handle_t) connection,
-        void *const buffer, const size_t bufferOctets)
-{
-    XMPP_LIB_(error_code_t) result = XMPP_ERR_FAIL;
-    return result;
-}
-
-XMPP_LIB_(error_code_t) XMPP_LIB_ibb_close(XMPP_LIB_(ibb_handle_t) connection)
-{
-    XMPP_LIB_(error_code_t) result = XMPP_ERR_FAIL;
-    return result;
+    if (ctx)
+    {
+        dec_master_init_counter();
+        free((void *)ctx);
+    }
 }
 

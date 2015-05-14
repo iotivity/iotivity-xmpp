@@ -63,9 +63,16 @@ namespace Iotivity
     // LocalError
     //
     const LocalError LocalError::SUCCESS(LocalError::ecSuccess);
-    LocalError::ErrorType LocalError::s_nextErrorType = etMaxInternalErrorType;
-    recursive_mutex LocalError::s_nextErrorLock;
-    LocalError::TypeNameMap LocalError::s_typeNames;
+
+    /// The value of the last error-type code returned by getNextAvailableErrorType()
+    static LocalError::ErrorType s_nextErrorType = LocalError::etMaxInternalErrorType;
+
+    /// Synchronization object to protect access to s_nextErrorType
+    static recursive_mutex s_nextErrorLock;
+
+    /// Collection of error-code to name mappings.
+    typedef std::map<LocalError::ErrorType, std::string> TypeNameMap;
+    static TypeNameMap s_typeNames;
 
     LocalError::LocalError():
         m_errorType(etUnknownError),

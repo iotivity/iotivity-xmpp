@@ -118,7 +118,7 @@ namespace Iotivity
 
         /// @brief Interface describing a set of parameters to be passed to a SASL mechanism for
         /// user authentication.
-        struct ISaslParams
+        struct XMPP_API ISaslParams
         {
             virtual ~ISaslParams() {}
 
