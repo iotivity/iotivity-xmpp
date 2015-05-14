@@ -229,7 +229,8 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
 
     auto connectedFunc = [&openCallbackPromise](XmppConnectedEvent & connected)
     {
-        if (connected.result().succeeded())
+        if (connected.result().succeeded() ||
+            connected.result() == connect_error::ecServerClosedStream)
         {
             openCallbackPromise.set_value();
         }

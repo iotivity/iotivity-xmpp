@@ -20,6 +20,7 @@
 
 import os
 import platform
+import itertools
 from sets import Set
 from script_helpers import *
 
@@ -92,6 +93,7 @@ env.Tool('UnpackAll',   toolpath=['tools/'])
 env.Tool('Configure',   toolpath=['tools/'])
 env.Tool('Make',        toolpath=['tools/'])
 
+env['HOST'] = platform_host()
 
 print "HOST:", platform_host()
 print "PLATFORM:", env['PLATFORM']
@@ -208,6 +210,31 @@ conf.env['HAS_CURL'] = conf.CheckLib('curl')
 
 ## Check for safec
 #conf.env['HAS_SAFEC'] = 'yes' if conf.CheckLib('safec') else 'no'
+
+
+def versionSufficient(sourceVer, requiredVer):
+    verOkay = True
+    for p in itertools.izip_longest(sourceVer.split('.'), requiredVer.split('.'), fillvalue = 0):
+        if p[0]<p[1]:
+            verOkay = False
+            break
+        if p[0]>p[1]:
+            break        
+    return verOkay
+
+
+if 'linux' in env['HOST']:
+    # Check g++ version (GCC C-version shouldn't matter as much, but can be checked too 
+    # here if needed)
+    REQUIRED_VER = "4.8.1"
+    # Check gcc version
+    if  not versionSufficient(env['CXXVERSION'], REQUIRED_VER):
+        print "g++ version is insufficient to compile the client. Required:", REQUIRED_VER, " Found:", env['CXXVERSION']
+        Exit(2)
+
+    print "CCERVSION", env['CCVERSION']
+    print "CXXERVSION", env['CXXVERSION']
+
 
 env = conf.Finish()
 

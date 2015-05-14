@@ -38,6 +38,8 @@
 #include <deque>
 #include <map>
 
+#include "../include/ccfxmpp.h"
+
 namespace Iotivity
 {
 
@@ -52,7 +54,7 @@ namespace Iotivity
     /// Higher-level errors can be derived from this error condition which
     /// make use of more complex attributes to retain information about
     /// what error occurred or when it occurred.
-    class AbstractErrorCondition
+    class XMPP_API AbstractErrorCondition
     {
         public:
             /// Destructor for more complex error conditions requiring memory
@@ -121,7 +123,7 @@ namespace Iotivity
     ///       additional member variables. Many sections of code need to be
     ///       able to downconvert to the base LocalError which may result in
     ///       loss of information.
-    class LocalError : public AbstractErrorCondition
+    class XMPP_API LocalError : public AbstractErrorCondition
     {
         public:
             /// The error type of a LocalError. The source of the error will
@@ -275,16 +277,6 @@ namespace Iotivity
             /// The error code of this LocalError instance as interpreted by the
             /// current m_errorType.
             ECODE m_errorCode;
-
-            /// The value of the last error-type code returned by
-            /// getNextAvailableErrorType()
-            static ErrorType s_nextErrorType;
-            /// Synchronization object to protect access to s_nextErrorType
-            static std::recursive_mutex s_nextErrorLock;
-
-            /// Collection of error-code to name mappings.
-            typedef std::map<ErrorType, std::string> TypeNameMap;
-            static TypeNameMap s_typeNames;
     };
 } // namespace Iotivity
 

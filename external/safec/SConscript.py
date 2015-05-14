@@ -49,7 +49,6 @@ safec_env.Depends(libs_dir+'libsafec-1.0.so.1', libs_dir+'libsafec-1.0.so')
 safec_env.Install(env['BUILD_DIR'], libs_dir+'libsafec-1.0.so.1')
 
 
-
 # Append the path to safec to the original environment
 env.AppendUnique(CPPPATH = [dir_offset_from_current(src_dir+'include/')],
                  LIBPATH = [dir_offset_from_current(src_dir+'src/.libs/')])
