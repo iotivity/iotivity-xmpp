@@ -229,8 +229,7 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
 
     auto connectedFunc = [&openCallbackPromise](XmppConnectedEvent & connected)
     {
-        if (connected.result().succeeded() ||
-            connected.result() == connect_error::ecServerClosedStream)
+        if (connected.result().succeeded())
         {
             openCallbackPromise.set_value();
         }
@@ -238,7 +237,7 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
         {
             try
             {
-                cout << "CLOSED FAILURE " << connected.result().toString() << endl;
+                cout << "CONNECTED FAILURE " << connected.result().toString() << endl;
                 throw connected.result();
             }
             catch (const connect_error &)
@@ -249,7 +248,8 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
     };
     auto closedFunc = [&closedCallbackPromise](XmppClosedEvent & closed)
     {
-        if (closed.result().succeeded())
+        if (closed.result().succeeded() ||
+            closed.result() == connect_error::ecServerClosedStream)
         {
             closedCallbackPromise.set_value();
         }
@@ -301,7 +301,7 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
     {
         ASSERT_NO_THROW(streamCallbackFuture.get());
 
-        auto status2 = openCallbackFuture.wait_for(chrono::seconds(5));
+        auto status2 = openCallbackFuture.wait_for(chrono::seconds(10));
         EXPECT_EQ(status2, future_status::ready);
         if (status2 == future_status::ready)
         {

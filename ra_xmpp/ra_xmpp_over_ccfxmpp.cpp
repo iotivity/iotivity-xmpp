@@ -30,6 +30,7 @@
 
 #include <string>
 #include <iostream>
+#include <map>
 
 
 #ifdef ENABLE_LIBSTROPHE
@@ -80,114 +81,19 @@ struct UserIdentity
 };
 
 
-struct XmppWrappers
-{
-        static void addWrapper(const void *const wrapper)
-        {
-            std::lock_guard<std::recursive_mutex> lock(mutex());
-            s_wrappers.insert(wrapper);
-        }
-
-        static bool isValidWrapper(const void *const wrapper)
-        {
-            std::lock_guard<std::recursive_mutex> lock(mutex());
-            return s_wrappers.find(wrapper) != s_wrappers.end();
-        }
-
-        static void removeWrapper(const void *const wrapper)
-        {
-            std::lock_guard<std::recursive_mutex> lock(mutex());
-            s_wrappers.erase(wrapper);
-        }
-
-    private:
-        static std::recursive_mutex &mutex()
-        {
-            static std::recursive_mutex s_mutex;
-            return s_mutex;
-        }
-        static std::set<const void *> s_wrappers;
-};
-
-std::set<const void *> XmppWrappers::s_wrappers;
-
 
 struct ContextWrapper
 {
         ContextWrapper()
-        {
+        {}
 
-            /*
-
-            SecureBuffer password;
-            password.write("unitTestPassword");
-            auto scramConfig = SaslScramSha1::Params::create("unitTestUserName1", password);
-            auto plainConfig = SaslPlain::Params::create("unittest", password);
-
-            #ifdef ENABLE_LIBSTROPHE
-            XmppConfig config(JabberID("unittest@xmpp.local"), "xmpp.local");
-            #else
-            XmppConfig config(JabberID(""), "xmpp-dev");
-            #endif
-            config.requireTLSNegotiation();
-            config.setSaslConfig("SCRAM-SHA-1", scramConfig);
-            config.setSaslConfig("PLAIN", plainConfig);
-
-            auto client = XmppClient::create();
-            ASSERT_NO_THROW(client->initiateXMPP(config, xmlConnection, streamPromise));
-
-            shared_ptr<IXmppStream> xmppStream;
-            EXPECT_NO_THROW(xmppStream = streamFuture.get());
-            EXPECT_NE(xmppStream, nullptr);
-            if (xmppStream)
-            {
-                cout<< "GOT STREAM FUTURE"<< endl;
-                ASSERT_TRUE(xmppStream->whenNegotiated().valid());
-
-                auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(10));
-                EXPECT_EQ(status, future_status::ready);
-                if (status==future_status::ready)
-                {
-                    try
-                    {
-                        xmppStream->whenNegotiated().get();
-                        auto doc = XMLDocument::createEmptyDocument();
-                        auto message = doc->createElement("iq");
-                        message->setAttribute("type", "get");
-                        message->setAttribute("id", xmppStream->getNextID());
-                        message->setAttribute("to", "xmpp-dev");
-
-                        auto query = doc->createElement("query");
-                        query->setAttribute("xmlns", "http://jabber.org/protocol/disco#info");
-
-                        message->appendChild(query);
-                        doc->appendChild(message);
-
-                        promise<void> ready;
-                        future<void> readyFuture = ready.get_future();
-                        xmppStream->sendQuery(move(message),
-                            [&ready](const connect_error &, XMLElement::Ptr)
-                            {
-                                promise<void> localReady = move(ready);
-                                localReady.set_value();
-                            });
-                        readyFuture.wait_for(chrono::seconds(2));
-                    }
-                    catch (...)
-                    {
-                        EXPECT_NO_THROW(throw);
-                    }
-                }
-            }
-            */
-        }
         ~ContextWrapper()
-        {
-        }
+        {}
 
-        void connect(void *const handle, const std::string &host, const std::string &port,
-                     const ProxyConfig &proxy, const std::string &userName,
-                     const SecureBuffer &password,  InBandRegister inbandRegistrationAction,
+        void connect(void *const handle, const string &host, const string &port,
+                     const ProxyConfig &proxy, const string &userName,
+                     const SecureBuffer &password, const string &userJID,
+                     const string &xmppDomain, InBandRegister inbandRegistrationAction,
                      XMPP_LIB_(connection_callback_t) callback)
         {
 #ifdef ENABLE_LIBSTROPHE
@@ -199,27 +105,62 @@ struct ContextWrapper
                                      static_pointer_cast<IStreamConnection>(remoteTcp));
 #endif // ENABLE_LIBSTROPHE
 
-            XmppConfig config;
+            XmppConfig config(JabberID(userJID), xmppDomain);
             config.requireTLSNegotiation();
 
             config.setSaslConfig("SCRAM-SHA-1", SaslScramSha1::Params::create(userName, password));
             config.setSaslConfig("PLAIN", SaslPlain::Params::create(userName, password));
 
-
-            auto client = XmppClient::create();
+            m_client = XmppClient::create();
 
             auto createdFunc =
                 [handle, callback](XmppStreamCreatedEvent & e)
             {
                 if (e.result().succeeded())
                 {
-                    //e.stream()->onConnected() += streamConnectedCallback;
-                    //e.stream()->onClosed() += streamClosedCallback;
+                    const void *streamHandle = e.stream().get();
+                    {
+                        lock_guard<recursive_mutex> lock(mutex());
+                        s_streamsByHandle[streamHandle] = e.stream();
+                    }
+
+                    auto streamConnectedFunc =
+                        [streamHandle, callback](XmppConnectedEvent & e)
+                    {
+                        if (callback.on_connected)
+                        {
+                            callback.on_connected(callback.param, translateError(e.result()),
+                                                  streamHandle);
+                        }
+                    };
+                    using StreamConnectedFunc = NotifySyncFunc<XmppConnectedEvent,
+                          decltype(streamConnectedFunc)>;
+                    e.stream()->onConnected() += make_shared<StreamConnectedFunc>(
+                                                     streamConnectedFunc);
+
+                    auto streamClosedFunc =
+                        [streamHandle, callback](XmppClosedEvent & e)
+                    {
+                        if (callback.on_disconnected)
+                        {
+                            callback.on_disconnected(callback.param,
+                                                     translateError(e.result()),
+                                                     streamHandle);
+                        }
+
+                        {
+                            lock_guard<recursive_mutex> lock(mutex());
+                            s_streamsByHandle.erase(streamHandle);
+                        }
+                    };
+                    using StreamClosedFunc = NotifySyncFunc<XmppClosedEvent,
+                          decltype(streamClosedFunc)>;
+                    e.stream()->onClosed() += make_shared<StreamClosedFunc>(streamClosedFunc);
                 }
                 else
                 {
                     XMPP_LIB_(error_code_t) errorCode = translateError(e.result());
-                    if (callback.on_connected && XmppWrappers::isValidWrapper(handle))
+                    if (callback.on_connected && isValidWrapper(handle))
                     {
                         callback.on_connected(callback.param, errorCode, handle);
                     }
@@ -227,15 +168,26 @@ struct ContextWrapper
             };
 
             using StreamCreatedFunc = NotifySyncFunc<XmppStreamCreatedEvent, decltype(createdFunc)>;
-            client->onStreamCreated() += make_shared<StreamCreatedFunc>(createdFunc);
+            m_client->onStreamCreated() += make_shared<StreamCreatedFunc>(createdFunc);
 
-            client->initiateXMPP(config, xmlConnection);
+            m_client->initiateXMPP(config, xmlConnection);
+        }
+
+        static shared_ptr<IXmppStream> streamByHandle(XMPP_LIB_(connection_handle_t) connection)
+        {
+            lock_guard<recursive_mutex> lock(mutex());
+            auto f = s_streamsByHandle.find(connection);
+            return f != s_streamsByHandle.end() ? f->second.lock() : shared_ptr<IXmppStream>();
         }
 
         static XMPP_LIB_(error_code_t) translateError(const connect_error &ce)
         {
             XMPP_LIB_(error_code_t) errorCode = XMPP_ERR_FAIL;
-            if (ce.errorType() == connect_error::etConnectError())
+            if (ce.succeeded())
+            {
+                errorCode = XMPP_ERR_OK;
+            }
+            else if (ce.errorType() == connect_error::etConnectError())
             {
                 switch (ce.errorCode())
                 {
@@ -331,8 +283,43 @@ struct ContextWrapper
             }
             return errorCode;
         }
+
+
+        static void addWrapper(const void *const wrapper)
+        {
+            lock_guard<recursive_mutex> lock(mutex());
+            s_wrappers.insert(wrapper);
+        }
+
+        static bool isValidWrapper(const void *const wrapper)
+        {
+            lock_guard<recursive_mutex> lock(mutex());
+            return s_wrappers.find(wrapper) != s_wrappers.end();
+        }
+
+        static void removeWrapper(const void *const wrapper)
+        {
+            lock_guard<recursive_mutex> lock(mutex());
+            s_wrappers.erase(wrapper);
+        }
+
+    protected:
+        static recursive_mutex &mutex()
+        {
+            static recursive_mutex s_mutex;
+            return s_mutex;
+        }
+
     private:
+        shared_ptr<XmppClient> m_client{};
+
+        static set<const void *> s_wrappers;
+        using StreamHandleMap = map<const void *, weak_ptr<IXmppStream>>;
+        static StreamHandleMap s_streamsByHandle;
 };
+
+set<const void *> ContextWrapper::s_wrappers;
+ContextWrapper::StreamHandleMap ContextWrapper::s_streamsByHandle;
 
 
 extern "C"
@@ -354,7 +341,7 @@ extern "C"
         try
         {
             ContextWrapper *wrapper = new ContextWrapper;
-            XmppWrappers::addWrapper(wrapper);
+            ContextWrapper::addWrapper(wrapper);
             return wrapper;
         }
         catch (...) {}
@@ -368,9 +355,9 @@ extern "C"
             if (handle)
             {
                 ContextWrapper *wrapper = reinterpret_cast<ContextWrapper *>(handle);
-                if (XmppWrappers::isValidWrapper(wrapper))
+                if (ContextWrapper::isValidWrapper(wrapper))
                 {
-                    XmppWrappers::removeWrapper(wrapper);
+                    ContextWrapper::removeWrapper(wrapper);
                     delete wrapper;
                 }
             }
@@ -396,7 +383,7 @@ extern "C"
         {
             ContextWrapper *wrapper = reinterpret_cast<ContextWrapper *>(handle);
 
-            if (!XmppWrappers::isValidWrapper(wrapper))
+            if (!ContextWrapper::isValidWrapper(wrapper))
             {
                 return XMPP_ERR_INVALID_HANDLE;
             }
@@ -412,6 +399,28 @@ extern "C"
             {
                 string passStr = identity->password;
                 password.setBuffer(passStr.c_str(), passStr.size());
+            }
+
+            string userJID;
+            if (identity->user_jid)
+            {
+                userJID = identity->user_jid;
+            }
+
+            string hostStr;
+            if (host->host)
+            {
+                hostStr = host->host;
+            }
+
+            string xmppDomain;
+            if (host->xmpp_domain)
+            {
+                xmppDomain = host->xmpp_domain;
+            }
+            else
+            {
+                xmppDomain = hostStr;
             }
 
             auto portStr = to_string(host->port);
@@ -432,12 +441,42 @@ extern "C"
                                  proxyType) :
                                  ProxyConfig();
 
-            wrapper->connect(handle, host->host, portStr, proxyConfig, userName, password,
-                             identity->inband_registration, callback);
+            wrapper->connect(handle, hostStr, portStr, proxyConfig, userName, password,
+                             userJID, xmppDomain, identity->inband_registration, callback);
 
             return XMPP_ERR_OK;
         }
+        catch (const connect_error &ce)
+        {
+            return ContextWrapper::translateError(ce);
+        }
         catch (...) {}
+        return XMPP_ERR_INTERNAL_ERROR;
+    }
+
+
+    XMPP_LIB_(error_code_t) xmpp_wrapper_disconnect(XMPP_LIB_(connection_handle_t) connection)
+    {
+        if (!connection)
+        {
+            return XMPP_ERR_INVALID_HANDLE;
+        }
+        try
+        {
+            shared_ptr<IXmppStream> stream = ContextWrapper::streamByHandle(connection);
+            if (!stream)
+            {
+                return XMPP_ERR_INVALID_HANDLE;
+            }
+            stream->close();
+            return XMPP_ERR_OK;
+        }
+        catch (const connect_error &ce)
+        {
+            return ContextWrapper::translateError(ce);
+        }
+        catch (...) {}
+
         return XMPP_ERR_INTERNAL_ERROR;
     }
 
