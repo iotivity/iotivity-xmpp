@@ -29,6 +29,8 @@
 #include <ra_xmpp.h>
 
 #include <string>
+#include <thread>
+#include <future>
 
 using namespace std;
 
@@ -54,17 +56,20 @@ TEST(ra_xmpp, xmpp_host)
     memset(&host, 1, sizeof(host));
 
     ASSERT_NE(host.protocol, XMPP_PROTOCOL_XMPP);
-    xmpp_host_init(&host, "TEST_HOST", 5222, XMPP_PROTOCOL_XMPP);
+    xmpp_host_init(&host, "TEST_HOST", 5222, "TEST_DOMAIN", XMPP_PROTOCOL_XMPP);
 
     EXPECT_EQ(host.cb, sizeof(host));
 
     ASSERT_NE(host.host, nullptr);
     EXPECT_EQ(string(host.host), "TEST_HOST");
     EXPECT_EQ(host.port, 5222);
+    ASSERT_NE(host.xmpp_domain, nullptr);
+    EXPECT_EQ(string(host.xmpp_domain), "TEST_DOMAIN");
     EXPECT_EQ(host.protocol, XMPP_PROTOCOL_XMPP);
     xmpp_host_destroy(&host);
 
     EXPECT_EQ(host.host, nullptr);
+    EXPECT_EQ(host.xmpp_domain, nullptr);
 
     EXPECT_TRUE(xmpp_global_shutdown_okay() == 1);
 }
@@ -122,6 +127,117 @@ TEST(ra_xmpp, xmpp_startup_shutdown)
     xmpp_context_init(&context);
     xmpp_handle_t handle = xmpp_startup(&context);
     EXPECT_NE(handle, nullptr);
+
+    xmpp_shutdown(handle);
+    xmpp_context_destroy(&context);
+
+    EXPECT_TRUE(xmpp_global_shutdown_okay() == 1);
+}
+
+
+const char *TEST_PROXY_HOST = "proxy-us.intel.com";
+const uint16_t TEST_PROXY_PORT = 1080;
+
+const char *JABBERDAEMON_TEST_HOST = "xmpp-dev-lb.api.intel.com";
+const char *JABBERDAEMON_TEST_DOMAIN =  "xmpp-dev";
+const uint16_t JABBERDAEMON_TEST_PORT = 5222;
+
+const char *JABBERDAEMON_INTERNAL_TEST_HOST = "strophe-test.amr.corp.intel.com";
+const char *JABBERDAEMON_INTERNAL_TEST_PORT = "5222";
+
+//const std::string JABBERDAEMON_TEST_URL = "xmpp-dev-lb.api.intel.com/http-bind";
+//const Iotivity::Xmpp::JabberID MY_JID{"unittest"};
+
+
+struct ConnectCallbackTest
+{
+
+        ConnectCallbackTest(XMPP_LIB_(error_code_t) expect_connect,
+                            XMPP_LIB_(error_code_t) expect_disconnect):
+            m_onConnectErr(expect_connect), m_onDisconnectErr(expect_disconnect), m_connection(0) {}
+
+        static void connected(void *const param, XMPP_LIB_(error_code_t) result,
+                              XMPP_LIB_(connection_handle_t) connection)
+        {
+            EXPECT_NE(param, nullptr);
+            ConnectCallbackTest *self = reinterpret_cast<ConnectCallbackTest *>(param);
+            EXPECT_EQ(result, self->m_onConnectErr);
+            self->m_connection = connection;
+            cout << "Connected Callback: " << result << endl;
+
+            self->m_connectedRanPromise.set_value();
+        }
+
+        XMPP_LIB_(connection_handle_t) getConnection()
+        {
+            return m_connection;
+        }
+
+        static void disconnected(void *const param, XMPP_LIB_(error_code_t) result,
+                                 XMPP_LIB_(connection_handle_t) connection)
+        {
+            EXPECT_NE(param, nullptr);
+            ConnectCallbackTest *self = reinterpret_cast<ConnectCallbackTest *>(param);
+            EXPECT_EQ(result, self->m_onDisconnectErr);
+            EXPECT_EQ(connection, self->m_connection);
+
+            cout << "Disconnected Callback: " << result << endl;
+
+            self->m_disconnectedRanPromise.set_value();
+        }
+
+        future<void> connectedRan() { return m_connectedRanPromise.get_future(); }
+        future<void> disconnectedRan() { return m_disconnectedRanPromise.get_future(); }
+
+    private:
+        XMPP_LIB_(error_code_t) m_onConnectErr;
+        XMPP_LIB_(error_code_t) m_onDisconnectErr;
+        promise<void> m_connectedRanPromise;
+        promise<void> m_disconnectedRanPromise;
+        XMPP_LIB_(connection_handle_t) m_connection;
+};
+
+
+TEST(ra_xmpp, xmpp_remote_connect)
+{
+    xmpp_context_t context;
+    xmpp_context_init(&context);
+
+    xmpp_handle_t handle = xmpp_startup(&context);
+
+    xmpp_host_t host;
+    xmpp_host_init(&host, JABBERDAEMON_TEST_HOST, JABBERDAEMON_TEST_PORT, JABBERDAEMON_TEST_DOMAIN,
+                   XMPP_PROTOCOL_XMPP);
+
+    xmpp_identity_t identity;
+    xmpp_identity_init(&identity, "unitTest", "unitTestPassword", "", XMPP_NO_IN_BAND_REGISTER);
+
+    xmpp_proxy_t proxy;
+    xmpp_proxy_init(&proxy, TEST_PROXY_HOST, TEST_PROXY_PORT, XMPP_PROXY_SOCKS5);
+
+
+    ConnectCallbackTest connect_callback_wrapper(XMPP_ERR_OK, XMPP_ERR_OK);
+
+    xmpp_connection_callback_t callback = {};
+    callback.on_connected = &ConnectCallbackTest::connected;
+    callback.on_disconnected = &ConnectCallbackTest::disconnected;
+    callback.param = &connect_callback_wrapper;
+
+    EXPECT_EQ(xmpp_connect_with_proxy(handle, &host, &identity, &proxy, callback), XMPP_ERR_OK);
+
+    // Wait for the connect callback.
+    EXPECT_NO_THROW(connect_callback_wrapper.connectedRan().get());
+
+    // Close.
+    EXPECT_EQ(xmpp_close(connect_callback_wrapper.getConnection()), XMPP_ERR_OK);
+
+    // Wait for the close callback.
+    EXPECT_NO_THROW(connect_callback_wrapper.disconnectedRan().get());
+
+
+    xmpp_proxy_destroy(&proxy);
+    xmpp_identity_destroy(&identity);
+    xmpp_host_destroy(&host);
 
     xmpp_shutdown(handle);
     xmpp_context_destroy(&context);
