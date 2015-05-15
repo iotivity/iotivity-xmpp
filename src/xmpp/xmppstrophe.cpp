@@ -238,9 +238,9 @@ namespace Iotivity
                     }
                 }
 
-                virtual shared_future<void> &whenNegotiated() { return m_negotiated; }
+                virtual shared_future<void> &whenNegotiated() override { return m_negotiated; }
 
-                virtual shared_future<JabberID> &whenBound() { return m_bound; }
+                virtual shared_future<JabberID> &whenBound() override { return m_bound; }
 
                 virtual void sendStanza(XMLDocument::Ptr stanza) override
                 {

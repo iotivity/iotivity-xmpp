@@ -71,6 +71,7 @@ extern XMPP_LIB_(error_code_t) xmpp_wrapper_connect(void *handle,
         const XMPP_LIB_(identity_t) * const identity,
         const XMPP_LIB_(proxy_t) * const proxy,
         XMPP_LIB_(connection_callback_t) callback);
+extern XMPP_LIB_(error_code_t) xmpp_wrapper_disconnect(XMPP_LIB_(connection_handle_t) connection);
 
 
 
@@ -168,7 +169,8 @@ XMPP_LIB_(context_t) *clone_context(const XMPP_LIB_(context_t) *context)
 
 
 void XMPP_LIB_(host_init)(XMPP_LIB_(host_t) * const host, const char *const host_name,
-                          uint16_t port, XMPP_LIB_(protocol_t) protocol)
+                          uint16_t port,  const char *const xmpp_domain,
+                          XMPP_LIB_(protocol_t) protocol)
 {
     if (host)
     {
@@ -177,6 +179,8 @@ void XMPP_LIB_(host_init)(XMPP_LIB_(host_t) * const host, const char *const host
 
         host->host = clone_c_str(host_name);
         host->port = port;
+
+        host->xmpp_domain = clone_c_str(xmpp_domain);
 
         host->protocol = protocol;
 
@@ -190,6 +194,8 @@ void XMPP_LIB_(host_destroy)(XMPP_LIB_(host_t) *host)
     {
         free_c_str(host->host);
         host->host = NULL;
+        free_c_str(host->xmpp_domain);
+        host->xmpp_domain = NULL;
         dec_master_init_counter();
     }
 }
@@ -340,12 +346,11 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(connect_with_proxy)(XMPP_LIB_(handle_t) handle
     return xmpp_wrapper_connect(ctx->wrapper_handle, host, identity, proxy, callback);
 }
 
-// TODO: Add support-check
+// TODO: Add support-check function
 
 XMPP_LIB_(error_code_t) XMPP_LIB_(close)(XMPP_LIB_(connection_handle_t) connection)
 {
-    XMPP_LIB_(error_code_t) result = XMPP_ERR_FAIL;
-    return result;
+    return xmpp_wrapper_disconnect(connection);
 }
 
 
