@@ -636,8 +636,8 @@ namespace Iotivity
                     onClosed().fire(XmppClosedEvent(connect_error::SUCCESS));
                 }
 
-                shared_future<void> &whenNegotiated() { return m_negotiated; }
-                std::shared_future<JabberID> &whenBound() { return m_bound; }
+                virtual shared_future<void> &whenNegotiated() override { return m_negotiated; }
+                virtual shared_future<JabberID> &whenBound() override { return m_bound; }
 
                 // This is the post-bind send. Do not use it for sending any stream negotiation
                 // stanzas.

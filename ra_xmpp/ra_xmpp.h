@@ -49,8 +49,8 @@ extern "C"
 {
 #endif
 
-typedef void *XMPP_LIB_(handle_t);
-typedef void *XMPP_LIB_(connection_handle_t);
+typedef const void *XMPP_LIB_(handle_t);
+typedef const void *XMPP_LIB_(connection_handle_t);
 
 typedef enum XMPP_LIB_(status)
 {
@@ -154,11 +154,12 @@ typedef struct XMPP_LIB_(host)
     size_t                  cb;
     char                   *host;
     uint16_t                port;
+    char                   *xmpp_domain;
     XMPP_LIB_(protocol_t)   protocol;
 } XMPP_LIB_(host_t);
 
 void XMPP_LIB_(host_init)(XMPP_LIB_(host_t) * const host, const char *const host_name,
-                          uint16_t port,
+                          uint16_t port, const char *const xmpp_domain,
                           XMPP_LIB_(protocol_t) protocol);
 void XMPP_LIB_(host_destroy)(XMPP_LIB_(host_t) *host);
 
