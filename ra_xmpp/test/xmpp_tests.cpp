@@ -23,6 +23,11 @@
 
 /// @file xmpp_tests.cpp
 
+// Required by ra_xmpp.h for the Windows target builds.
+#ifdef _WIN32
+#include <SDKDDKVer.h>
+#endif
+
 #include <gtest/gtest.h>
 
 #define XMPP_LIB_(x) xmpp_##x
@@ -126,7 +131,7 @@ TEST(ra_xmpp, xmpp_startup_shutdown)
     xmpp_context_t context;
     xmpp_context_init(&context);
     xmpp_handle_t handle = xmpp_startup(&context);
-    EXPECT_NE(handle, nullptr);
+    EXPECT_NE(handle.abstract_handle, nullptr);
 
     xmpp_shutdown(handle);
     xmpp_context_destroy(&context);
@@ -154,7 +159,7 @@ struct ConnectCallbackTest
 
         ConnectCallbackTest(XMPP_LIB_(error_code_t) expect_connect,
                             XMPP_LIB_(error_code_t) expect_disconnect):
-            m_onConnectErr(expect_connect), m_onDisconnectErr(expect_disconnect), m_connection(0) {}
+            m_onConnectErr(expect_connect), m_onDisconnectErr(expect_disconnect), m_connection( {0}) {}
 
         static void connected(void *const param, XMPP_LIB_(error_code_t) result,
                               XMPP_LIB_(connection_handle_t) connection)
@@ -179,7 +184,7 @@ struct ConnectCallbackTest
             EXPECT_NE(param, nullptr);
             ConnectCallbackTest *self = reinterpret_cast<ConnectCallbackTest *>(param);
             EXPECT_EQ(result, self->m_onDisconnectErr);
-            EXPECT_EQ(connection, self->m_connection);
+            EXPECT_EQ(connection.abstract_connection, self->m_connection.abstract_connection);
 
             cout << "Disconnected Callback: " << result << endl;
 
@@ -210,7 +215,7 @@ TEST(ra_xmpp, xmpp_remote_connect)
                    XMPP_PROTOCOL_XMPP);
 
     xmpp_identity_t identity;
-    xmpp_identity_init(&identity, "unitTest", "unitTestPassword", "", XMPP_NO_IN_BAND_REGISTER);
+    xmpp_identity_init(&identity, "unittest", "unitTestPassword", "", XMPP_NO_IN_BAND_REGISTER);
 
     xmpp_proxy_t proxy;
     xmpp_proxy_init(&proxy, TEST_PROXY_HOST, TEST_PROXY_PORT, XMPP_PROXY_SOCKS5);
