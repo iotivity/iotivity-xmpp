@@ -61,8 +61,8 @@ errno_t memset_s(void *dest, rsize_t dmax, uint8_t value)
 
 typedef struct
 {
-    XMPP_LIB_(context_t)   *user_context;
-    void                   *wrapper_handle;
+    xmpp_context_t *  user_context;
+    void *                  wrapper_handle;
 } xmpp_ctx_t;
 
 
@@ -72,21 +72,21 @@ typedef struct
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 extern void *const xmpp_wrapper_create_wrapper(void);
 extern void xmpp_wrapper_destroy_wrapper(void *handle);
-extern XMPP_LIB_(error_code_t) xmpp_wrapper_connect(void *handle,
-        const XMPP_LIB_(host_t) * const host,
-        const XMPP_LIB_(identity_t) * const identity,
-        const XMPP_LIB_(proxy_t) * const proxy,
-        XMPP_LIB_(connection_callback_t) callback);
-extern XMPP_LIB_(error_code_t) xmpp_wrapper_disconnect(XMPP_LIB_(connection_handle_t) connection);
+extern xmpp_error_code_t xmpp_wrapper_connect(void *handle,
+                                                    const xmpp_host_t * const host,
+                                                    const xmpp_identity_t * const identity,
+                                                    const xmpp_proxy_t * const proxy,
+                                                    xmpp_connection_callback_t callback);
+extern xmpp_error_code_t xmpp_wrapper_disconnect(xmpp_connection_handle_t connection);
 
-extern void *xmpp_wrapper_register_message_callback(XMPP_LIB_(connection_handle_t) connection,
-        XMPP_LIB_(message_callback_t) callback);
+extern void *xmpp_wrapper_register_message_callback(xmpp_connection_handle_t connection,
+                                                    xmpp_message_callback_t callback);
 extern void xmpp_wrapper_unregister_message_callback(void *handle);
-extern XMPP_LIB_(error_code_t) xmpp_wrapper_send_message(void *handle,
-        const char *const recipient,
-        const void *const message,
+extern xmpp_error_code_t xmpp_wrapper_send_message(void *handle, 
+                                                        const char * const recipient, 
+                                                        const void * const message,
         const size_t sizeInOctets,
-        XMPP_LIB_(transmission_options_t) options);
+                                                        xmpp_transmission_options_t options);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +156,7 @@ void free_c_str(char *const str)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Internal library functions.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void XMPP_LIB_(context_init)(XMPP_LIB_(context_t) * const context)
+void xmpp_context_init(xmpp_context_t * const context)
 {
     if (context)
     {
@@ -165,15 +165,15 @@ void XMPP_LIB_(context_init)(XMPP_LIB_(context_t) * const context)
     }
 }
 
-void XMPP_LIB_(context_destroy)(XMPP_LIB_(context_t) *context)
+void xmpp_context_destroy(xmpp_context_t *context)
 {
 }
 
 // This is separated out under the assumption that the context will expand to include
 // pointers to heap objects.
-XMPP_LIB_(context_t) *clone_context(const XMPP_LIB_(context_t) *context)
+xmpp_context_t *clone_context(const xmpp_context_t *context)
 {
-    XMPP_LIB_(context_t) *cloned_context = calloc(1, sizeof(*context));
+    xmpp_context_t *cloned_context = calloc(1, sizeof(*context));
     if (cloned_context)
     {
         memmove_s(cloned_context, sizeof(*cloned_context), context, sizeof(*context));
@@ -182,9 +182,9 @@ XMPP_LIB_(context_t) *clone_context(const XMPP_LIB_(context_t) *context)
 }
 
 
-void XMPP_LIB_(host_init)(XMPP_LIB_(host_t) * const host, const char *const host_name,
-                          uint16_t port,  const char *const xmpp_domain,
-                          XMPP_LIB_(protocol_t) protocol)
+void xmpp_host_init(xmpp_host_t * const host, const char * const host_name, 
+                          uint16_t port,  const char * const xmpp_domain, 
+                          xmpp_protocol_t protocol)
 {
     if (host)
     {
@@ -202,7 +202,7 @@ void XMPP_LIB_(host_init)(XMPP_LIB_(host_t) * const host, const char *const host
     }
 }
 
-void XMPP_LIB_(host_destroy)(XMPP_LIB_(host_t) *host)
+void xmpp_host_destroy(xmpp_host_t *host)
 {
     if (host)
     {
@@ -215,8 +215,8 @@ void XMPP_LIB_(host_destroy)(XMPP_LIB_(host_t) *host)
 }
 
 
-void XMPP_LIB_(identity_init)(XMPP_LIB_(identity_t) * const identity, const char *const user_name,
-                              const char *const password, const char *const user_jid,
+void xmpp_identity_init(xmpp_identity_t * const identity, const char * const user_name, 
+                            const char * const password, const char * const user_jid,
                               InBandRegister_t inband_register)
 {
     if (identity)
@@ -234,7 +234,7 @@ void XMPP_LIB_(identity_init)(XMPP_LIB_(identity_t) * const identity, const char
     }
 }
 
-void XMPP_LIB_(identity_destroy)(XMPP_LIB_(identity_t) *identity)
+void xmpp_identity_destroy(xmpp_identity_t *identity)
 {
     if (identity)
     {
@@ -249,8 +249,8 @@ void XMPP_LIB_(identity_destroy)(XMPP_LIB_(identity_t) *identity)
     }
 }
 
-void XMPP_LIB_(proxy_init)(XMPP_LIB_(proxy_t) * const proxy, const char *const host,
-                           uint16_t port, XMPP_LIB_(proxy_type_t) proxy_type)
+void xmpp_proxy_init(xmpp_proxy_t * const proxy, const char * const host, 
+                           uint16_t port, xmpp_proxy_type_t proxy_type)
 {
     if (proxy)
     {
@@ -265,7 +265,7 @@ void XMPP_LIB_(proxy_init)(XMPP_LIB_(proxy_t) * const proxy, const char *const h
     }
 }
 
-void XMPP_LIB_(proxy_destroy)(XMPP_LIB_(proxy_t) *proxy)
+void xmpp_proxy_destroy(xmpp_proxy_t *proxy)
 {
     if (proxy)
     {
@@ -280,13 +280,13 @@ void XMPP_LIB_(proxy_destroy)(XMPP_LIB_(proxy_t) *proxy)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // External library functions.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-XMPP_LIB_(handle_t) XMPP_LIB_(startup)(const XMPP_LIB_(context_t) * const context)
+xmpp_handle_t xmpp_startup(const xmpp_context_t * const context)
 {
     // Make certain the context was initialized (future versions may support different
     // context structure sizes).
-    if (context->cb != sizeof(XMPP_LIB_(context_t)))
+    if (context->cb!=sizeof(xmpp_context_t))
     {
-        XMPP_LIB_(handle_t) nullHandle = {NULL};
+        xmpp_handle_t nullHandle = {NULL};
         return nullHandle;
     }
 
@@ -299,7 +299,7 @@ XMPP_LIB_(handle_t) XMPP_LIB_(startup)(const XMPP_LIB_(context_t) * const contex
         if (new_context->wrapper_handle == NULL)
         {
             free(new_context);
-            XMPP_LIB_(handle_t) nullHandle = {NULL};
+            xmpp_handle_t nullHandle = {NULL};
             return nullHandle;
         }
 
@@ -307,11 +307,11 @@ XMPP_LIB_(handle_t) XMPP_LIB_(startup)(const XMPP_LIB_(context_t) * const contex
         inc_master_init_counter();
 
     }
-    XMPP_LIB_(handle_t) contextHandle = {new_context};
+    xmpp_handle_t contextHandle = {new_context};
     return contextHandle;
 }
 
-void XMPP_LIB_(shutdown)(XMPP_LIB_(handle_t) handle)
+void xmpp_shutdown(xmpp_handle_t handle)
 {
     // TODO: Add valid-handle lookup....
     if (handle.abstract_handle)
@@ -335,24 +335,24 @@ void XMPP_LIB_(shutdown)(XMPP_LIB_(handle_t) handle)
     }
 }
 
-int XMPP_LIB_(global_shutdown_okay)(void)
+int xmpp_global_shutdown_okay(void)
 {
     return master_init_counter() == 0 ? 1 : 0;
 }
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(connect)(XMPP_LIB_(handle_t) handle,
-        const XMPP_LIB_(host_t) * const host,
-        const XMPP_LIB_(identity_t) * const identity,
-        XMPP_LIB_(connection_callback_t) callback)
+xmpp_error_code_t xmpp_connect(xmpp_handle_t handle,
+                                           const xmpp_host_t * const host,
+                                           const xmpp_identity_t * const identity,
+                                           xmpp_connection_callback_t callback)
 {
-    return XMPP_LIB_(connect_with_proxy)(handle, host, identity, NULL, callback);
+    return xmpp_connect_with_proxy(handle, host, identity, NULL, callback);
 }
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(connect_with_proxy)(XMPP_LIB_(handle_t) handle,
-        const XMPP_LIB_(host_t) * const host,
-        const XMPP_LIB_(identity_t) * const identity,
-        const XMPP_LIB_(proxy_t) * const proxy,
-        XMPP_LIB_(connection_callback_t) callback)
+xmpp_error_code_t xmpp_connect_with_proxy(xmpp_handle_t handle,
+                                                      const xmpp_host_t * const host,
+                                                      const xmpp_identity_t * const identity,
+                                                      const xmpp_proxy_t * const proxy,
+                                                      xmpp_connection_callback_t callback)
 {
     // TODO: Add handle-check
     if (!handle.abstract_handle)
@@ -366,7 +366,7 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(connect_with_proxy)(XMPP_LIB_(handle_t) handle
 
 // TODO: Add support-check function
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(close)(XMPP_LIB_(connection_handle_t) connection)
+xmpp_error_code_t xmpp_close(xmpp_connection_handle_t connection)
 {
     return xmpp_wrapper_disconnect(connection);
 }
@@ -377,17 +377,17 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(close)(XMPP_LIB_(connection_handle_t) connecti
 
 typedef struct
 {
-    XMPP_LIB_(connection_handle_t)  connection;
-    XMPP_LIB_(message_callback_t)   callback;
+    xmpp_connection_handle_t  connection;
+    xmpp_message_callback_t   callback;
     void                           *wrapper_handle;
 } xmpp_message_ctx_t;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Message Transmission/Receipt
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-XMPP_LIB_(message_context_t) XMPP_LIB_(message_context_create)(
-    XMPP_LIB_(connection_handle_t) connection,
-    XMPP_LIB_(message_callback_t) callback)
+xmpp_message_context_t xmpp_message_context_create(
+                                                        xmpp_connection_handle_t connection,
+                                                        xmpp_message_callback_t callback)
 {
     xmpp_message_ctx_t *new_context = calloc(1, sizeof(xmpp_message_ctx_t));
 
@@ -400,22 +400,22 @@ XMPP_LIB_(message_context_t) XMPP_LIB_(message_context_create)(
         if (new_context->wrapper_handle == NULL)
         {
             free(new_context);
-            XMPP_LIB_(message_context_t) nullContext = {NULL};
+            xmpp_message_context_t nullContext = {NULL};
             return nullContext;
         }
 
         inc_master_init_counter();
     }
 
-    XMPP_LIB_(message_context_t) resultContext = {new_context};
+    xmpp_message_context_t resultContext = {new_context};
     return resultContext;
 }
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(send_message)(XMPP_LIB_(message_context_t) ctx,
-        const char *const recipient,
-        const void *const message,
+xmpp_error_code_t xmpp_send_message(xmpp_message_context_t ctx, 
+                                                const char * const recipient, 
+                                                const void * const message,
         const size_t messageOctets,
-        XMPP_LIB_(transmission_options_t) options)
+                                                xmpp_transmission_options_t options)
 {
     if (!ctx.abstract_context)
     {
@@ -425,7 +425,7 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(send_message)(XMPP_LIB_(message_context_t) ctx
                                      recipient, message, messageOctets, options);
 }
 
-void XMPP_LIB_(message_context_destroy)(XMPP_LIB_(message_context_t) ctx)
+void xmpp_message_context_destroy(xmpp_message_context_t ctx)
 {
     if (ctx.abstract_context)
     {
