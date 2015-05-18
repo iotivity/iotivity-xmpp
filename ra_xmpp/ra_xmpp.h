@@ -31,15 +31,6 @@
 #include <stdint.h>
 
 
-#ifndef XMPP_LIB_
-
-/// @note XMPP_LIB_ is provided to enable rough support for a C++-like namespace.
-///       Define this to a value other than 'xmpp_' to change the names of the library functions.
-///
-#define XMPP_LIB_(x) xmpp_##x
-#endif
-
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -49,21 +40,21 @@ extern "C"
 typedef struct
 {
     const void     *abstract_handle;
-} XMPP_LIB_(handle_t);
+} xmpp_handle_t;
 
 typedef struct
 {
     const void     *abstract_connection;
-} XMPP_LIB_(connection_handle_t);
+} xmpp_connection_handle_t;
 
-typedef enum XMPP_LIB_(status)
+typedef enum xmpp_status
 {
     XMPP_UP,
     XMPP_DOWN
-} XMPP_LIB_(status_t);
+} xmpp_status_t;
 
 
-typedef enum XMPP_LIB_(error_code)
+typedef enum xmpp_error_code
 {
     XMPP_ERR_OK = 0,
 
@@ -101,35 +92,35 @@ typedef enum XMPP_LIB_(error_code)
     XMPP_ERR_IBB_NO_SUPPORT,
     XMPP_ERR_IBB_CLOSED_LOCAL,
     XMPP_ERR_IBB_CLOSED_REMOTE
-} XMPP_LIB_(error_code_t);
+} xmpp_error_code_t;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Callback type declarations
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-typedef void (* XMPP_LIB_(log_func_t))(void *const param);  // TBD
-typedef void (* XMPP_LIB_(status_func_t))(XMPP_LIB_(status_t) status);
-typedef void (* XMPP_LIB_(connected_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
-        XMPP_LIB_(connection_handle_t) connection);
-typedef void (* XMPP_LIB_(disconnected_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
-        XMPP_LIB_(connection_handle_t) connection);
+typedef void (* xmpp_log_func_t)(void * const param); // TBD
+typedef void (* xmpp_status_func_t)(xmpp_status_t status);
+typedef void (* xmpp_connected_func_t)(void * const param, xmpp_error_code_t result,
+                                        xmpp_connection_handle_t connection);
+typedef void (* xmpp_disconnected_func_t)(void * const param, xmpp_error_code_t result,
+                                          xmpp_connection_handle_t connection);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Callback closure declarations
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-typedef struct XMPP_LIB_(log_callback)
+typedef struct xmpp_log_callback
 {
-    XMPP_LIB_(log_func_t) on_log;
+    xmpp_log_func_t on_log;
     void                 *param;
-} XMPP_LIB_(log_callback_t);
+} xmpp_log_callback_t;
 
 
-typedef struct XMPP_LIB_(connection_callback)
+typedef struct xmpp_connection_callback
 {
-    XMPP_LIB_(connected_func_t)     on_connected;
-    XMPP_LIB_(disconnected_func_t)  on_disconnected;
+    xmpp_connected_func_t       on_connected;
+    xmpp_disconnected_func_t    on_disconnected;
     void                           *param;
-} XMPP_LIB_(connection_callback_t);
+} xmpp_connection_callback_t;
 
 
 
@@ -137,37 +128,37 @@ typedef struct XMPP_LIB_(connection_callback)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Support structures and init/destroy functions.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-typedef struct XMPP_LIB_(context)
+typedef struct xmpp_context
 {
     size_t                              cb;
-    const XMPP_LIB_(log_callback_t) *   log_callback;
-} XMPP_LIB_(context_t);
+    const xmpp_log_callback_t *     log_callback;
+} xmpp_context_t;
 
 
-void XMPP_LIB_(context_init)(XMPP_LIB_(context_t) * const context);
-void XMPP_LIB_(context_destroy)(XMPP_LIB_(context_t) *context);
+void xmpp_context_init(xmpp_context_t * const context);
+void xmpp_context_destroy(xmpp_context_t *context);
 
 
 
-typedef enum XMPP_LIB_(protocol)
+typedef enum xmpp_protocol
 {
     XMPP_PROTOCOL_XMPP = 0,
     XMPP_PROTOCOL_BOSH
-} XMPP_LIB_(protocol_t);
+} xmpp_protocol_t;
 
-typedef struct XMPP_LIB_(host)
+typedef struct xmpp_host
 {
     size_t                  cb;
     char                   *host;
     uint16_t                port;
     char                   *xmpp_domain;
-    XMPP_LIB_(protocol_t)   protocol;
-} XMPP_LIB_(host_t);
+    xmpp_protocol_t         protocol;
+} xmpp_host_t;
 
-void XMPP_LIB_(host_init)(XMPP_LIB_(host_t) * const host, const char *const host_name,
-                          uint16_t port, const char *const xmpp_domain,
-                          XMPP_LIB_(protocol_t) protocol);
-void XMPP_LIB_(host_destroy)(XMPP_LIB_(host_t) *host);
+void xmpp_host_init(xmpp_host_t * const host, const char * const host_name,
+                    uint16_t port, const char * const xmpp_domain,
+                    xmpp_protocol_t protocol);
+void xmpp_host_destroy(xmpp_host_t *host);
 
 
 typedef enum InBandRegister
@@ -177,7 +168,7 @@ typedef enum InBandRegister
     XMPP_REQUIRE_IN_BAND_REGISTER,
 } InBandRegister_t;
 
-typedef struct XMPP_LIB_(identity)
+typedef struct xmpp_identity
 {
     size_t              cb;
     char               *user_name;
@@ -186,31 +177,31 @@ typedef struct XMPP_LIB_(identity)
     char               *user_jid;
 
     InBandRegister_t    inband_registration;
-} XMPP_LIB_(identity_t);
+} xmpp_identity_t;
 
-void XMPP_LIB_(identity_init)(XMPP_LIB_(identity_t) * const identity, const char *const user_name,
-                              const char *const password, const char *const user_jid,
+void xmpp_identity_init(xmpp_identity_t * const identity, const char * const user_name,
+                        const char * const password, const char * const user_jid,
                               InBandRegister_t inband_register);
-void XMPP_LIB_(identity_destroy)(XMPP_LIB_(identity_t) *identity);
+void xmpp_identity_destroy(xmpp_identity_t *identity);
 
 
-typedef enum XMPP_LIB_(proxy_type)
+typedef enum xmpp_proxy_type
 {
     XMPP_PROXY_DIRECT_CONNECT = 0,
     XMPP_PROXY_SOCKS5
-} XMPP_LIB_(proxy_type_t);
+} xmpp_proxy_type_t;
 
-typedef struct XMPP_LIB_(proxy)
+typedef struct xmpp_proxy
 {
     size_t                  cb;
-    XMPP_LIB_(proxy_type_t) proxy_type;
+    xmpp_proxy_type_t       proxy_type;
     char                   *proxy_host;
     uint16_t                proxy_port;
-} XMPP_LIB_(proxy_t);
+} xmpp_proxy_t;
 
-void XMPP_LIB_(proxy_init)(XMPP_LIB_(proxy_t) * const proxy, const char *const host, uint16_t port,
-                           XMPP_LIB_(proxy_type_t) proxy_type);
-void XMPP_LIB_(proxy_destroy)(XMPP_LIB_(proxy_t) * proxy);
+void xmpp_proxy_init(xmpp_proxy_t * const proxy, const char * const host, uint16_t port,
+                     xmpp_proxy_type_t proxy_type);
+void xmpp_proxy_destroy(xmpp_proxy_t * proxy);
 
 
 
@@ -219,28 +210,26 @@ void XMPP_LIB_(proxy_destroy)(XMPP_LIB_(proxy_t) * proxy);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // TODO: Get version (Check Version?)
 
-XMPP_LIB_(handle_t) XMPP_LIB_(startup)(const XMPP_LIB_(context_t) * const context);
+xmpp_handle_t xmpp_startup(const xmpp_context_t * const context);
 
-void XMPP_LIB_(shutdown)(XMPP_LIB_(handle_t) handle);
+void xmpp_shutdown(xmpp_handle_t handle);
 
 // TEST-only function to verify that shutdown will not leak resources.
-int XMPP_LIB_(global_shutdown_okay)(void);
+int xmpp_global_shutdown_okay(void);
 
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(connect)(XMPP_LIB_(handle_t) handle,
-        const XMPP_LIB_(host_t )* const host,
-        const XMPP_LIB_(identity_t) * const identity,
-        XMPP_LIB_(connection_callback_t) callback);
+xmpp_error_code_t xmpp_connect(xmpp_handle_t handle, const xmpp_host_t * const host,
+                               const xmpp_identity_t * const identity,
+                               xmpp_connection_callback_t callback);
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(connect_with_proxy)(XMPP_LIB_(handle_t) handle,
-        const XMPP_LIB_(host_t) * const host,
-        const XMPP_LIB_(identity_t) * const identity,
-        const XMPP_LIB_(proxy_t) * const proxy,
-        XMPP_LIB_(connection_callback_t) callback);
+xmpp_error_code_t xmpp_connect_with_proxy(xmpp_handle_t handle, const xmpp_host_t * const host,
+                                          const xmpp_identity_t * const identity,
+                                          const xmpp_proxy_t * const proxy,
+                                          xmpp_connection_callback_t callback);
 
 // TODO: Add support-check
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(close)(XMPP_LIB_(connection_handle_t) connection);
+xmpp_error_code_t xmpp_close(xmpp_connection_handle_t connection);
 
 
 
@@ -252,40 +241,37 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(close)(XMPP_LIB_(connection_handle_t) connecti
 typedef struct
 {
     const void   *abstract_context;
-} XMPP_LIB_(message_context_t);
+} xmpp_message_context_t;
 
-typedef void (* XMPP_LIB_(message_sent_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
-        const void *const toRecipient,
-        const void *const msg, size_t messageOctets);
-typedef void (* XMPP_LIB_(message_recv_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
-        const void *const fromSender,
-        const void *const msg, size_t messageOctets);
+typedef void (* xmpp_message_sent_func_t)(void * const param, xmpp_error_code_t result,
+                                          const void * const toRecipient,
+                                          const void * const msg, size_t messageOctets);
+typedef void (* xmpp_message_recv_func_t)(void * const param, xmpp_error_code_t result,
+                                          const void * const fromSender,
+                                          const void * const msg, size_t messageOctets);
 
-typedef struct XMPP_LIB_(message_callback)
+typedef struct xmpp_message_callback
 {
-    XMPP_LIB_(message_sent_func_t)  on_sent;
-    XMPP_LIB_(message_recv_func_t)  on_received;
+    xmpp_message_sent_func_t    on_sent;
+    xmpp_message_recv_func_t    on_received;
     void                           *param;
-} XMPP_LIB_(message_callback_t);
+} xmpp_message_callback_t;
 
 
-typedef enum XMPP_LIB_(transmission_options)
+typedef enum xmpp_transmission_options
 {
     XMPP_MESSAGE_TRANSMIT_DEFAULT = 0x0
-} XMPP_LIB_(transmission_options_t);
+} xmpp_transmission_options_t;
 
 
-XMPP_LIB_(message_context_t) XMPP_LIB_(message_context_create)(
-    XMPP_LIB_(connection_handle_t) connection,
-    XMPP_LIB_(message_callback_t) callback);
+xmpp_message_context_t xmpp_message_context_create(xmpp_connection_handle_t connection,
+                                                   xmpp_message_callback_t callback);
 
-XMPP_LIB_(error_code_t) XMPP_LIB_(send_message)(XMPP_LIB_(message_context_t) ctx,
-        const char *const recipient,
-        const void *const message,
-        const size_t messageOctets,
-        XMPP_LIB_(transmission_options_t) options);
+xmpp_error_code_t xmpp_send_message(xmpp_message_context_t ctx, const char * const recipient,
+                                    const void * const message, const size_t messageOctets,
+                                    xmpp_transmission_options_t options);
 
-void XMPP_LIB_(message_context_destroy)(XMPP_LIB_(message_context_t) ctx);
+void xmpp_message_context_destroy(xmpp_message_context_t ctx);
 
 #ifdef __cplusplus
 }

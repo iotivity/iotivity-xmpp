@@ -104,7 +104,7 @@ struct ContextWrapper
                      const ProxyConfig &proxy, const string &userName,
                      const SecureBuffer &password, const string &userJID,
                      const string &xmppDomain, InBandRegister inbandRegistrationAction,
-                     XMPP_LIB_(connection_callback_t) callback)
+                     xmpp_connection_callback_t callback)
         {
 #ifdef ENABLE_LIBSTROPHE
             auto xmlConnection = make_shared<XmppStropheConnection>(host, port);
@@ -139,9 +139,9 @@ struct ContextWrapper
                     {
                         if (callback.on_connected)
                         {
-                            XMPP_LIB_(connection_handle_t) connectHandle = {streamHandle};
+                            xmpp_connection_handle_t connectionHandle = {streamHandle};
                             callback.on_connected(callback.param, translateError(e.result()),
-                                                  connectHandle);
+                                                  connectionHandle);
                         }
                     };
                     using StreamConnectedFunc = NotifySyncFunc<XmppConnectedEvent,
@@ -154,10 +154,10 @@ struct ContextWrapper
                     {
                         if (callback.on_disconnected)
                         {
-                            XMPP_LIB_(connection_handle_t) connectHandle = {streamHandle};
+                            xmpp_connection_handle_t connectionHandle = {streamHandle};
                             callback.on_disconnected(callback.param,
                                                      translateError(e.result()),
-                                                     connectHandle);
+                                                     connectionHandle);
                         }
 
                         {
@@ -171,11 +171,11 @@ struct ContextWrapper
                 }
                 else
                 {
-                    XMPP_LIB_(error_code_t) errorCode = translateError(e.result());
+                    xmpp_error_code_t errorCode = translateError(e.result());
                     if (callback.on_connected && isValidWrapper(handle))
                     {
-                        XMPP_LIB_(connection_handle_t) connectHandle = {handle};
-                        callback.on_connected(callback.param, errorCode, connectHandle);
+                        xmpp_connection_handle_t connectionHandle = {handle};
+                        callback.on_connected(callback.param, errorCode, connectionHandle);
                     }
                 }
             };
@@ -186,16 +186,16 @@ struct ContextWrapper
             m_client->initiateXMPP(config, xmlConnection);
         }
 
-        static shared_ptr<IXmppStream> streamByHandle(XMPP_LIB_(connection_handle_t) connection)
+        static shared_ptr<IXmppStream> streamByHandle(xmpp_connection_handle_t connection)
         {
             lock_guard<recursive_mutex> lock(mutex());
             auto f = s_streamsByHandle.find(connection.abstract_connection);
             return f != s_streamsByHandle.end() ? f->second.lock() : shared_ptr<IXmppStream>();
         }
 
-        static XMPP_LIB_(error_code_t) translateError(const connect_error &ce) _NOEXCEPT
+        static xmpp_error_code_t translateError(const connect_error &ce) _NOEXCEPT
         {
-            XMPP_LIB_(error_code_t) errorCode = XMPP_ERR_FAIL;
+            xmpp_error_code_t errorCode = XMPP_ERR_FAIL;
             if (ce.succeeded())
             {
                 errorCode = XMPP_ERR_OK;
@@ -297,8 +297,8 @@ struct ContextWrapper
             return errorCode;
         }
 
-        static void *registerMessageCallback(XMPP_LIB_(connection_handle_t) connection,
-                                             XMPP_LIB_(message_callback_t) callback)
+        static void *registerMessageCallback(xmpp_connection_handle_t connection,
+                                             xmpp_message_callback_t callback)
         {
             shared_ptr<IXmppStream> stream = streamByHandle(connection);
             if (!stream)
@@ -316,6 +316,7 @@ struct ContextWrapper
                 s_messageHandlers[messageCallback.get()] = messageCallback;
             }
             return messageCallback.get();
+            return messageCallback.get();
         }
 
         static void unregisterMessageCallback(void *handle)
@@ -324,9 +325,9 @@ struct ContextWrapper
             s_messageHandlers.erase(handle);
         }
 
-        static XMPP_LIB_(error_code_t) sendMessage(void *handle, const std::string &recipient,
-                const ByteBuffer &tempBuffer,
-                XMPP_LIB_(transmission_options_t) options)
+        static xmpp_error_code_t sendMessage(void *handle, const std::string &recipient,
+                                             const ByteBuffer &tempBuffer,
+                                             xmpp_transmission_options_t options)
         {
             shared_ptr<MessageHandler> handler;
             {
@@ -391,11 +392,11 @@ struct ContextWrapper
 
         struct MessageHandler
         {
-            MessageHandler(shared_ptr<IXmppStream> stream, XMPP_LIB_(message_callback_t) callback):
+            MessageHandler(shared_ptr<IXmppStream> stream, xmpp_message_callback_t callback):
                 m_stream(stream), m_callback(callback) {}
 
             weak_ptr<IXmppStream> m_stream;
-            XMPP_LIB_(message_callback_t) m_callback;
+            xmpp_message_callback_t m_callback;
         };
         using MessageHandlerMap = map<const void *, shared_ptr<MessageHandler>>;
         static MessageHandlerMap s_messageHandlers;
@@ -450,11 +451,11 @@ extern "C"
         catch (...) {}
     }
 
-    XMPP_LIB_(error_code_t) xmpp_wrapper_connect(void *const handle,
-            const XMPP_LIB_(host_t) * const host,
-            const XMPP_LIB_(identity_t) * const identity,
-            const XMPP_LIB_(proxy_t) * const proxy,
-            XMPP_LIB_(connection_callback_t) callback)
+    xmpp_error_code_t xmpp_wrapper_connect(void *const handle,
+                                           const xmpp_host_t *const host,
+                                           const xmpp_identity_t *const identity,
+                                           const xmpp_proxy_t *const proxy,
+                                           xmpp_connection_callback_t callback)
     {
         if (!handle)
         {
@@ -540,7 +541,7 @@ extern "C"
     }
 
 
-    XMPP_LIB_(error_code_t) xmpp_wrapper_disconnect(XMPP_LIB_(connection_handle_t) connection)
+    xmpp_error_code_t xmpp_wrapper_disconnect(xmpp_connection_handle_t connection)
     {
         if (!connection.abstract_connection)
         {
@@ -565,8 +566,8 @@ extern "C"
         return XMPP_ERR_INTERNAL_ERROR;
     }
 
-    void *xmpp_wrapper_register_message_callback(XMPP_LIB_(connection_handle_t) connection,
-            XMPP_LIB_(message_callback_t) callback)
+    void *xmpp_wrapper_register_message_callback(xmpp_connection_handle_t connection,
+            xmpp_message_callback_t callback)
     {
         try
         {
@@ -589,11 +590,11 @@ extern "C"
         catch (...) {}
     }
 
-    XMPP_LIB_(error_code_t) xmpp_wrapper_send_message(void *handle,
+    xmpp_error_code_t xmpp_wrapper_send_message(void *handle,
             const char *const recipient,
             const void *const message,
             const size_t sizeInOctets,
-            XMPP_LIB_(transmission_options_t) options)
+            xmpp_transmission_options_t options)
     {
         if (!handle)
         {
