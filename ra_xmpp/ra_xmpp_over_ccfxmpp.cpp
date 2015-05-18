@@ -47,6 +47,16 @@
 
 #include "ra_xmpp.h"
 
+
+#ifndef _NOEXCEPT
+#ifndef _MSC_VER
+#define _NOEXCEPT noexcept
+#else
+#define _NOEXCEPT
+#endif
+#endif
+
+
 using namespace std;
 using namespace Iotivity;
 
@@ -129,8 +139,9 @@ struct ContextWrapper
                     {
                         if (callback.on_connected)
                         {
+                            XMPP_LIB_(connection_handle_t) connectHandle = {streamHandle};
                             callback.on_connected(callback.param, translateError(e.result()),
-                                                  streamHandle);
+                                                  connectHandle);
                         }
                     };
                     using StreamConnectedFunc = NotifySyncFunc<XmppConnectedEvent,
@@ -143,9 +154,10 @@ struct ContextWrapper
                     {
                         if (callback.on_disconnected)
                         {
+                            XMPP_LIB_(connection_handle_t) connectHandle = {streamHandle};
                             callback.on_disconnected(callback.param,
                                                      translateError(e.result()),
-                                                     streamHandle);
+                                                     connectHandle);
                         }
 
                         {
@@ -162,7 +174,8 @@ struct ContextWrapper
                     XMPP_LIB_(error_code_t) errorCode = translateError(e.result());
                     if (callback.on_connected && isValidWrapper(handle))
                     {
-                        callback.on_connected(callback.param, errorCode, handle);
+                        XMPP_LIB_(connection_handle_t) connectHandle = {handle};
+                        callback.on_connected(callback.param, errorCode, connectHandle);
                     }
                 }
             };
@@ -176,11 +189,11 @@ struct ContextWrapper
         static shared_ptr<IXmppStream> streamByHandle(XMPP_LIB_(connection_handle_t) connection)
         {
             lock_guard<recursive_mutex> lock(mutex());
-            auto f = s_streamsByHandle.find(connection);
+            auto f = s_streamsByHandle.find(connection.abstract_connection);
             return f != s_streamsByHandle.end() ? f->second.lock() : shared_ptr<IXmppStream>();
         }
 
-        static XMPP_LIB_(error_code_t) translateError(const connect_error &ce)
+        static XMPP_LIB_(error_code_t) translateError(const connect_error &ce) _NOEXCEPT
         {
             XMPP_LIB_(error_code_t) errorCode = XMPP_ERR_FAIL;
             if (ce.succeeded())
@@ -284,6 +297,65 @@ struct ContextWrapper
             return errorCode;
         }
 
+        static void *registerMessageCallback(XMPP_LIB_(connection_handle_t) connection,
+                                             XMPP_LIB_(message_callback_t) callback)
+        {
+            shared_ptr<IXmppStream> stream = streamByHandle(connection);
+            if (!stream)
+            {
+                return nullptr;
+            }
+
+            // NOTE: We are not attempting to protect against the same connection getting
+            //       multiple callbacks registered. If multiple callbacks should be called
+            //       on the same connection, the caller has the option of setting them up.
+            auto messageCallback = make_shared<MessageHandler>(stream, callback);
+
+            {
+                lock_guard<recursive_mutex> lock(mutex());
+                s_messageHandlers[messageCallback.get()] = messageCallback;
+            }
+            return messageCallback.get();
+        }
+
+        static void unregisterMessageCallback(void *handle)
+        {
+            lock_guard<recursive_mutex> lock(mutex());
+            s_messageHandlers.erase(handle);
+        }
+
+        static XMPP_LIB_(error_code_t) sendMessage(void *handle, const std::string &recipient,
+                const ByteBuffer &tempBuffer,
+                XMPP_LIB_(transmission_options_t) options)
+        {
+            shared_ptr<MessageHandler> handler;
+            {
+                lock_guard<recursive_mutex> lock(mutex());
+                auto f = s_messageHandlers.find(handle);
+                if (f != s_messageHandlers.end())
+                {
+                    handler = f->second;
+                }
+            }
+
+            // TODO: Move to IBB implementation.
+            if (!handler)
+            {
+                return XMPP_ERR_INVALID_HANDLE;
+            }
+
+            shared_ptr<IXmppStream> stream = handler->m_stream.lock();
+            if (!stream)
+            {
+                return XMPP_ERR_STREAM_ALREADY_CLOSED;
+            }
+
+
+
+
+
+            return XMPP_ERR_FAIL;
+        }
 
         static void addWrapper(const void *const wrapper)
         {
@@ -316,10 +388,23 @@ struct ContextWrapper
         static set<const void *> s_wrappers;
         using StreamHandleMap = map<const void *, weak_ptr<IXmppStream>>;
         static StreamHandleMap s_streamsByHandle;
+
+        struct MessageHandler
+        {
+            MessageHandler(shared_ptr<IXmppStream> stream, XMPP_LIB_(message_callback_t) callback):
+                m_stream(stream), m_callback(callback) {}
+
+            weak_ptr<IXmppStream> m_stream;
+            XMPP_LIB_(message_callback_t) m_callback;
+        };
+        using MessageHandlerMap = map<const void *, shared_ptr<MessageHandler>>;
+        static MessageHandlerMap s_messageHandlers;
+
 };
 
 set<const void *> ContextWrapper::s_wrappers;
 ContextWrapper::StreamHandleMap ContextWrapper::s_streamsByHandle;
+ContextWrapper::MessageHandlerMap ContextWrapper::s_messageHandlers;
 
 
 extern "C"
@@ -457,7 +542,7 @@ extern "C"
 
     XMPP_LIB_(error_code_t) xmpp_wrapper_disconnect(XMPP_LIB_(connection_handle_t) connection)
     {
-        if (!connection)
+        if (!connection.abstract_connection)
         {
             return XMPP_ERR_INVALID_HANDLE;
         }
@@ -479,6 +564,69 @@ extern "C"
 
         return XMPP_ERR_INTERNAL_ERROR;
     }
+
+    void *xmpp_wrapper_register_message_callback(XMPP_LIB_(connection_handle_t) connection,
+            XMPP_LIB_(message_callback_t) callback)
+    {
+        try
+        {
+            return ContextWrapper::registerMessageCallback(connection, callback);
+        }
+        catch (...) {}
+        return NULL;
+    }
+
+    void xmpp_wrapper_unregister_message_callback(void *handle)
+    {
+        if (!handle)
+        {
+            return;
+        }
+        try
+        {
+            ContextWrapper::unregisterMessageCallback(handle);
+        }
+        catch (...) {}
+    }
+
+    XMPP_LIB_(error_code_t) xmpp_wrapper_send_message(void *handle,
+            const char *const recipient,
+            const void *const message,
+            const size_t sizeInOctets,
+            XMPP_LIB_(transmission_options_t) options)
+    {
+        if (!handle)
+        {
+            return XMPP_ERR_INVALID_HANDLE;
+        }
+        if (!recipient || (!message && sizeInOctets > 0))
+        {
+            return XMPP_ERR_INVALID_PARAMETER;
+        }
+        try
+        {
+            string recipientStr;
+            if (recipient)
+            {
+                recipientStr = recipient;
+            }
+
+            // A copy of the buffer is made here to avoid having the next layer up retain the
+            // data buffer past the call. If optimization is desired (and messages are large), consider
+            // having this layer provide the buffers to use on demand instead of relying on the
+            // lifespan of the buffer at the next layer up.
+            ByteBuffer tempBuffer(message, sizeInOctets);
+
+            return ContextWrapper::sendMessage(handle, recipientStr, tempBuffer, options);
+        }
+        catch (const connect_error &ce)
+        {
+            return ContextWrapper::translateError(ce);
+        }
+        catch (...) {}
+        return XMPP_ERR_INTERNAL_ERROR;
+    }
+
 
 } // extern "C"
 

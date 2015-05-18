@@ -23,6 +23,12 @@
 
 /// @file ra_xmpp.c
 
+
+// Required by ra_xmpp.h for the Windows target builds.
+#ifdef _WIN32
+#include <SDKDDKVer.h>
+#endif
+
 #include "ra_xmpp.h"
 
 #include <string.h>
@@ -73,6 +79,14 @@ extern XMPP_LIB_(error_code_t) xmpp_wrapper_connect(void *handle,
         XMPP_LIB_(connection_callback_t) callback);
 extern XMPP_LIB_(error_code_t) xmpp_wrapper_disconnect(XMPP_LIB_(connection_handle_t) connection);
 
+extern void *xmpp_wrapper_register_message_callback(XMPP_LIB_(connection_handle_t) connection,
+        XMPP_LIB_(message_callback_t) callback);
+extern void xmpp_wrapper_unregister_message_callback(void *handle);
+extern XMPP_LIB_(error_code_t) xmpp_wrapper_send_message(void *handle,
+        const char *const recipient,
+        const void *const message,
+        const size_t sizeInOctets,
+        XMPP_LIB_(transmission_options_t) options);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -272,7 +286,8 @@ XMPP_LIB_(handle_t) XMPP_LIB_(startup)(const XMPP_LIB_(context_t) * const contex
     // context structure sizes).
     if (context->cb != sizeof(XMPP_LIB_(context_t)))
     {
-        return (XMPP_LIB_(handle_t))NULL;
+        XMPP_LIB_(handle_t) nullHandle = {NULL};
+        return nullHandle;
     }
 
     xmpp_ctx_t *new_context = calloc(1, sizeof(xmpp_ctx_t));
@@ -283,28 +298,31 @@ XMPP_LIB_(handle_t) XMPP_LIB_(startup)(const XMPP_LIB_(context_t) * const contex
 
         if (new_context->wrapper_handle == NULL)
         {
-            return (XMPP_LIB_(handle_t))NULL;
+            free(new_context);
+            XMPP_LIB_(handle_t) nullHandle = {NULL};
+            return nullHandle;
         }
 
         new_context->user_context = clone_context(context);
         inc_master_init_counter();
 
     }
-    return (XMPP_LIB_(handle_t))new_context;
+    XMPP_LIB_(handle_t) contextHandle = {new_context};
+    return contextHandle;
 }
 
 void XMPP_LIB_(shutdown)(XMPP_LIB_(handle_t) handle)
 {
     // TODO: Add valid-handle lookup....
-    if (handle)
+    if (handle.abstract_handle)
     {
-        xmpp_ctx_t *ctx = (xmpp_ctx_t *)handle;
+        xmpp_ctx_t *ctx = (xmpp_ctx_t *)handle.abstract_handle;
         xmpp_wrapper_destroy_wrapper(ctx->wrapper_handle);
         if (ctx->user_context)
         {
             free(ctx->user_context);
         }
-        free((void *)handle);
+        free((void *)handle.abstract_handle);
         dec_master_init_counter();
 
         if (master_init_counter() != 0)
@@ -337,12 +355,12 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(connect_with_proxy)(XMPP_LIB_(handle_t) handle
         XMPP_LIB_(connection_callback_t) callback)
 {
     // TODO: Add handle-check
-    if (!handle)
+    if (!handle.abstract_handle)
     {
         return XMPP_ERR_INVALID_HANDLE;
     }
 
-    xmpp_ctx_t *ctx = (xmpp_ctx_t *)handle;
+    xmpp_ctx_t *ctx = (xmpp_ctx_t *)handle.abstract_handle;
     return xmpp_wrapper_connect(ctx->wrapper_handle, host, identity, proxy, callback);
 }
 
@@ -361,6 +379,7 @@ typedef struct
 {
     XMPP_LIB_(connection_handle_t)  connection;
     XMPP_LIB_(message_callback_t)   callback;
+    void                           *wrapper_handle;
 } xmpp_message_ctx_t;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -376,9 +395,20 @@ XMPP_LIB_(message_context_t) XMPP_LIB_(message_context_create)(
     {
         new_context->connection = connection;
         new_context->callback = callback;
+        new_context->wrapper_handle = xmpp_wrapper_register_message_callback(connection, callback);
+
+        if (new_context->wrapper_handle == NULL)
+        {
+            free(new_context);
+            XMPP_LIB_(message_context_t) nullContext = {NULL};
+            return nullContext;
+        }
+
         inc_master_init_counter();
     }
-    return (XMPP_LIB_(message_context_t))new_context;
+
+    XMPP_LIB_(message_context_t) resultContext = {new_context};
+    return resultContext;
 }
 
 XMPP_LIB_(error_code_t) XMPP_LIB_(send_message)(XMPP_LIB_(message_context_t) ctx,
@@ -387,16 +417,23 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(send_message)(XMPP_LIB_(message_context_t) ctx
         const size_t messageOctets,
         XMPP_LIB_(transmission_options_t) options)
 {
-    XMPP_LIB_(error_code_t) result = XMPP_ERR_FAIL;
-    return result;
+    if (!ctx.abstract_context)
+    {
+        return XMPP_ERR_INVALID_HANDLE;
+    }
+    return xmpp_wrapper_send_message(((xmpp_message_ctx_t *)ctx.abstract_context)->wrapper_handle,
+                                     recipient, message, messageOctets, options);
 }
 
 void XMPP_LIB_(message_context_destroy)(XMPP_LIB_(message_context_t) ctx)
 {
-    if (ctx)
+    if (ctx.abstract_context)
     {
+        xmpp_wrapper_unregister_message_callback(
+            ((xmpp_message_ctx_t *)ctx.abstract_context)->wrapper_handle);
+
         dec_master_init_counter();
-        free((void *)ctx);
+        free((void *)ctx.abstract_context);
     }
 }
 
