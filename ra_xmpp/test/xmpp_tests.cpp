@@ -30,7 +30,6 @@
 
 #include <gtest/gtest.h>
 
-#define XMPP_LIB_(x) xmpp_##x
 #include <ra_xmpp.h>
 
 #include <string>
@@ -157,12 +156,12 @@ const char *JABBERDAEMON_INTERNAL_TEST_PORT = "5222";
 struct ConnectCallbackTest
 {
 
-        ConnectCallbackTest(XMPP_LIB_(error_code_t) expect_connect,
-                            XMPP_LIB_(error_code_t) expect_disconnect):
+        ConnectCallbackTest(xmpp_error_code_t expect_connect,
+                            xmpp_error_code_t expect_disconnect):
             m_onConnectErr(expect_connect), m_onDisconnectErr(expect_disconnect), m_connection( {0}) {}
 
-        static void connected(void *const param, XMPP_LIB_(error_code_t) result,
-                              XMPP_LIB_(connection_handle_t) connection)
+        static void connected(void *const param, xmpp_error_code_t result,
+                              xmpp_connection_handle_t connection)
         {
             EXPECT_NE(param, nullptr);
             ConnectCallbackTest *self = reinterpret_cast<ConnectCallbackTest *>(param);
@@ -173,13 +172,13 @@ struct ConnectCallbackTest
             self->m_connectedRanPromise.set_value();
         }
 
-        XMPP_LIB_(connection_handle_t) getConnection()
+        xmpp_connection_handle_t getConnection()
         {
             return m_connection;
         }
 
-        static void disconnected(void *const param, XMPP_LIB_(error_code_t) result,
-                                 XMPP_LIB_(connection_handle_t) connection)
+        static void disconnected(void *const param, xmpp_error_code_t result,
+                                 xmpp_connection_handle_t connection)
         {
             EXPECT_NE(param, nullptr);
             ConnectCallbackTest *self = reinterpret_cast<ConnectCallbackTest *>(param);
@@ -195,11 +194,11 @@ struct ConnectCallbackTest
         future<void> disconnectedRan() { return m_disconnectedRanPromise.get_future(); }
 
     private:
-        XMPP_LIB_(error_code_t) m_onConnectErr;
-        XMPP_LIB_(error_code_t) m_onDisconnectErr;
+        xmpp_error_code_t m_onConnectErr;
+        xmpp_error_code_t m_onDisconnectErr;
         promise<void> m_connectedRanPromise;
         promise<void> m_disconnectedRanPromise;
-        XMPP_LIB_(connection_handle_t) m_connection;
+        xmpp_connection_handle_t m_connection;
 };
 
 
