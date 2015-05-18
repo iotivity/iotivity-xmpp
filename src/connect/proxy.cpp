@@ -60,7 +60,7 @@ namespace Iotivity
         ProxyConfig ProxyConfig::queryProxy()
         {
             WINHTTP_PROXY_INFO proxyInfo = {0};
-            if (WinHttpGetDefaultProxyConfiguration(&proxyInfo))
+            if (WinHttpGetDefaultProxyConfiguration(&proxyInfo) && proxyInfo.lpszProxy)
             {
                 wstring_convert<codecvt_utf8<wchar_t>, wchar_t> converter;
                 return ProxyConfig(converter.to_bytes(wstring(proxyInfo.lpszProxy)));

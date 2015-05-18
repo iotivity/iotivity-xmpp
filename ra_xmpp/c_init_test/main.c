@@ -4,21 +4,21 @@
 
 #include <stdio.h>
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
     xmpp_context_t context;
 
     xmpp_context_init(&context);
 
     xmpp_handle_t handle = xmpp_startup(&context);
-    if (handle)
+    if (handle.abstract_handle)
     {
         xmpp_shutdown(handle);
         printf("TEST RAN OKAY\n");
     }
     else
     {
-        printf("INIT TEST FAILED\n");    
+        printf("INIT TEST FAILED\n");
     }
 
     xmpp_context_destroy(&context);

@@ -27,10 +27,6 @@
 #ifndef RA_XMPP_H__
 #define RA_XMPP_H__
 
-#ifdef _WIN32
-#include <SDKDDKVer.h>
-#endif
-
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -49,8 +45,16 @@ extern "C"
 {
 #endif
 
-typedef const void *XMPP_LIB_(handle_t);
-typedef const void *XMPP_LIB_(connection_handle_t);
+
+typedef struct
+{
+    const void     *abstract_handle;
+} XMPP_LIB_(handle_t);
+
+typedef struct
+{
+    const void     *abstract_connection;
+} XMPP_LIB_(connection_handle_t);
 
 typedef enum XMPP_LIB_(status)
 {
@@ -62,13 +66,14 @@ typedef enum XMPP_LIB_(status)
 typedef enum XMPP_LIB_(error_code)
 {
     XMPP_ERR_OK = 0,
-    XMPP_ERR_CLIENT_DISCONNECTED,
-    XMPP_ERR_SERVER_DISCONNECTED,
 
+    XMPP_ERR_CLIENT_DISCONNECTED = -1,
+    XMPP_ERR_SERVER_DISCONNECTED = -2,
+
+    XMPP_ERR_FAIL = 1,                      ///> Default error. Generally indicates a coding error.
     XMPP_ERR_HOST_CONNECTION_FAILED,
     XMPP_ERR_STREAM_NOT_NEGOTIATED,
 
-    XMPP_ERR_FAIL,                          ///> Default error. Generally indicates a coding error.
     XMPP_ERR_INTERNAL_ERROR,
     XMPP_ERR_FEATURE_NOT_SUPPORTED,
     XMPP_ERR_BOSH_ERROR,                    ///> Error establishing BOSH connection
@@ -84,6 +89,7 @@ typedef enum XMPP_LIB_(error_code)
     XMPP_ERR_INVALID_SERVER_STANZA,
 
     XMPP_ERR_STREAM_CLOSING_NOT_AVAILABLE,
+    XMPP_ERR_STREAM_ALREADY_CLOSED,
 
     XMPP_ERR_REQUEST_ERROR_RESPONSE,
 
@@ -243,7 +249,10 @@ XMPP_LIB_(error_code_t) XMPP_LIB_(close)(XMPP_LIB_(connection_handle_t) connecti
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Message Transmission/Receipt
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-typedef const void *XMPP_LIB_(message_context_t);
+typedef struct
+{
+    const void   *abstract_context;
+} XMPP_LIB_(message_context_t);
 
 typedef void (* XMPP_LIB_(message_sent_func_t))(void *const param, XMPP_LIB_(error_code_t) result,
         const void *const toRecipient,
