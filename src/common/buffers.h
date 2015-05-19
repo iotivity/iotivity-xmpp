@@ -337,6 +337,11 @@ namespace Iotivity
             ByteBuffer        slice(size_t fromByteOffset, size_t forNBytes = all_bytes,
                                     bool copyBuffer = false) const;
 
+            static bool       base64Encode(const ByteBuffer &inputBuffer,
+                                           ByteBuffer &outputBuffer);
+            static bool       base64Decode(const ByteBuffer &inputBuffer,
+                                           ByteBuffer &outputBuffer);
+
         protected:
             /// Frees the underlying buffer used by this ByteBuffer instance. If
             /// this instance does not own the buffer, this function assign the
