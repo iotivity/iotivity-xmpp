@@ -61,8 +61,8 @@ errno_t memset_s(void *dest, rsize_t dmax, uint8_t value)
 
 typedef struct
 {
-    xmpp_context_t *  user_context;
-    void *                  wrapper_handle;
+    xmpp_context_t   *user_context;
+    void                   *wrapper_handle;
 } xmpp_ctx_t;
 
 
@@ -73,20 +73,20 @@ typedef struct
 extern void *const xmpp_wrapper_create_wrapper(void);
 extern void xmpp_wrapper_destroy_wrapper(void *handle);
 extern xmpp_error_code_t xmpp_wrapper_connect(void *handle,
-                                                    const xmpp_host_t * const host,
-                                                    const xmpp_identity_t * const identity,
-                                                    const xmpp_proxy_t * const proxy,
-                                                    xmpp_connection_callback_t callback);
+        const xmpp_host_t *const host,
+        const xmpp_identity_t *const identity,
+        const xmpp_proxy_t *const proxy,
+        xmpp_connection_callback_t callback);
 extern xmpp_error_code_t xmpp_wrapper_disconnect(xmpp_connection_handle_t connection);
 
 extern void *xmpp_wrapper_register_message_callback(xmpp_connection_handle_t connection,
-                                                    xmpp_message_callback_t callback);
+        xmpp_message_callback_t callback);
 extern void xmpp_wrapper_unregister_message_callback(void *handle);
-extern xmpp_error_code_t xmpp_wrapper_send_message(void *handle, 
-                                                        const char * const recipient, 
-                                                        const void * const message,
+extern xmpp_error_code_t xmpp_wrapper_send_message(void *handle,
+        const char *const recipient,
+        const void *const message,
         const size_t sizeInOctets,
-                                                        xmpp_transmission_options_t options);
+        xmpp_transmission_options_t options);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +156,7 @@ void free_c_str(char *const str)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Internal library functions.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void xmpp_context_init(xmpp_context_t * const context)
+void xmpp_context_init(xmpp_context_t *const context)
 {
     if (context)
     {
@@ -182,9 +182,9 @@ xmpp_context_t *clone_context(const xmpp_context_t *context)
 }
 
 
-void xmpp_host_init(xmpp_host_t * const host, const char * const host_name, 
-                          uint16_t port,  const char * const xmpp_domain, 
-                          xmpp_protocol_t protocol)
+void xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
+                    uint16_t port,  const char *const xmpp_domain,
+                    xmpp_protocol_t protocol)
 {
     if (host)
     {
@@ -215,9 +215,9 @@ void xmpp_host_destroy(xmpp_host_t *host)
 }
 
 
-void xmpp_identity_init(xmpp_identity_t * const identity, const char * const user_name, 
-                            const char * const password, const char * const user_jid,
-                              InBandRegister_t inband_register)
+void xmpp_identity_init(xmpp_identity_t *const identity, const char *const user_name,
+                        const char *const password, const char *const user_jid,
+                        InBandRegister_t inband_register)
 {
     if (identity)
     {
@@ -249,8 +249,8 @@ void xmpp_identity_destroy(xmpp_identity_t *identity)
     }
 }
 
-void xmpp_proxy_init(xmpp_proxy_t * const proxy, const char * const host, 
-                           uint16_t port, xmpp_proxy_type_t proxy_type)
+void xmpp_proxy_init(xmpp_proxy_t *const proxy, const char *const host,
+                     uint16_t port, xmpp_proxy_type_t proxy_type)
 {
     if (proxy)
     {
@@ -280,11 +280,11 @@ void xmpp_proxy_destroy(xmpp_proxy_t *proxy)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // External library functions.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-xmpp_handle_t xmpp_startup(const xmpp_context_t * const context)
+xmpp_handle_t xmpp_startup(const xmpp_context_t *const context)
 {
     // Make certain the context was initialized (future versions may support different
     // context structure sizes).
-    if (context->cb!=sizeof(xmpp_context_t))
+    if (context->cb != sizeof(xmpp_context_t))
     {
         xmpp_handle_t nullHandle = {NULL};
         return nullHandle;
@@ -341,18 +341,18 @@ int xmpp_global_shutdown_okay(void)
 }
 
 xmpp_error_code_t xmpp_connect(xmpp_handle_t handle,
-                                           const xmpp_host_t * const host,
-                                           const xmpp_identity_t * const identity,
-                                           xmpp_connection_callback_t callback)
+                               const xmpp_host_t *const host,
+                               const xmpp_identity_t *const identity,
+                               xmpp_connection_callback_t callback)
 {
     return xmpp_connect_with_proxy(handle, host, identity, NULL, callback);
 }
 
 xmpp_error_code_t xmpp_connect_with_proxy(xmpp_handle_t handle,
-                                                      const xmpp_host_t * const host,
-                                                      const xmpp_identity_t * const identity,
-                                                      const xmpp_proxy_t * const proxy,
-                                                      xmpp_connection_callback_t callback)
+        const xmpp_host_t *const host,
+        const xmpp_identity_t *const identity,
+        const xmpp_proxy_t *const proxy,
+        xmpp_connection_callback_t callback)
 {
     // TODO: Add handle-check
     if (!handle.abstract_handle)
@@ -386,8 +386,8 @@ typedef struct
 // Message Transmission/Receipt
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 xmpp_message_context_t xmpp_message_context_create(
-                                                        xmpp_connection_handle_t connection,
-                                                        xmpp_message_callback_t callback)
+    xmpp_connection_handle_t connection,
+    xmpp_message_callback_t callback)
 {
     xmpp_message_ctx_t *new_context = calloc(1, sizeof(xmpp_message_ctx_t));
 
@@ -411,11 +411,11 @@ xmpp_message_context_t xmpp_message_context_create(
     return resultContext;
 }
 
-xmpp_error_code_t xmpp_send_message(xmpp_message_context_t ctx, 
-                                                const char * const recipient, 
-                                                const void * const message,
-        const size_t messageOctets,
-                                                xmpp_transmission_options_t options)
+xmpp_error_code_t xmpp_send_message(xmpp_message_context_t ctx,
+                                    const char *const recipient,
+                                    const void *const message,
+                                    const size_t messageOctets,
+                                    xmpp_transmission_options_t options)
 {
     if (!ctx.abstract_context)
     {

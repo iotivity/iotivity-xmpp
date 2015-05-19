@@ -189,148 +189,24 @@ namespace Iotivity
     }
 #endif
 
-    template <typename _T> _T BASE64_ENCODE_RESERVE(_T size) { return (size + 2) / 3 * 4; }
-
     bool SecureBuffer::base64Encode(SecureBuffer &outputBuffer) const
     {
-        bool encodeOkay = false;
-        if (size() > 0)
+        bool encoded = ByteBuffer::base64Encode(*this, outputBuffer);
+        if (encoded)
         {
-            size_t newSize = BASE64_ENCODE_RESERVE(size());
-            if (newSize <= std::numeric_limits<int>::max())
-            {
-                if (outputBuffer.resizeBuffer(newSize +
-                                              32))   // provide extra space of the EVP_EncodeBlock to smash our buffer
-                {
-                    if (outputBuffer.reserve(
-                            newSize))          // but only reserve what is needed (which should not require a second allocation)
-                    {
-                        int outputLen = EVP_EncodeBlock((unsigned char *)outputBuffer, (const unsigned char *)*this,
-                                                        (int)size());
-
-                        if (outputLen > 0)
-                        {
-                            encodeOkay = true;
-                        }
-
-                        outputBuffer.seek(outputLen);
-
-                        // EVP_EncodeBlock has no buffer overrun checks so we will rely on
-                        // the buffer checking in debug mode to test for bad behavior.
-#ifdef DEBUG_USE_BYTE_BUFFER_GUARD_REGIONS
-                        checkGuardRegions();
-#endif
-                    }
-                }
-            }
+            outputBuffer.seek(outputBuffer.size());
         }
-        else
-        {
-            encodeOkay = outputBuffer.resetSize();
-        }
-        return encodeOkay;
+        return encoded;
     }
 
-    // NOTE: Adapted from X509Store. This was added because X509::Blob
-    //       does not guarantee erasure of the memory it uses. One of these
-    //       implementation should ideally supplant the other.
     bool SecureBuffer::base64Decode(SecureBuffer &outputBuffer) const
     {
-        static const unsigned char ascii2bin[] =
+        bool decoded = ByteBuffer::base64Decode(*this, outputBuffer);
+        if (decoded)
         {
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xE0, 0xF0, 0xFF, 0xFF, 0xF1, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xE0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0x3E, 0xFF, 0xF2, 0xFF, 0x3F,
-            0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B,
-            0x3C, 0x3D, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF,
-            0xFF, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-            0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E,
-            0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
-            0x17, 0x18, 0x19, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
-            0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-            0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30,
-            0x31, 0x32, 0x33, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-        };
-        static_assert(sizeof(ascii2bin) == 128, "ascii2bin must be 128 characters long");
-
-        bool decodeOkay = false;
-        if (size() > 0)
-        {
-            size_t inputSize = size();
-            const uint8_t *inputPtr = (const uint8_t *)*this;
-            const uint8_t *inputEnd = inputPtr + inputSize;
-
-            // Trim leading and trailing whitespace
-            while (inputPtr < inputEnd && *inputPtr == ' ') { ++inputPtr; }
-            do { --inputEnd; }
-            while (inputPtr < inputEnd && *inputEnd == ' ');
-
-            // Correct inputEnd and compute adjusted input size
-            inputSize = ++inputEnd - inputPtr;
-
-            // Make sure the string is divisible by 4
-            if (!(inputSize % 4))
-            {
-                // Estimate the output size
-                size_t outputSize = 3 * inputSize / 4;
-
-                // Calculate the actual output size
-                for (--inputEnd; inputPtr < inputEnd && *inputEnd == '='; --inputEnd)
-                {
-                    --outputSize;
-                }
-                ++inputEnd;
-
-                if (outputBuffer.reserve(outputSize))
-                {
-                    uint8_t *outputPtr = (uint8_t *)outputBuffer, *outputPtrEnd = outputPtr + outputSize;
-
-                    // Process the contents
-                    decodeOkay = true;
-                    while (inputPtr < inputEnd)
-                    {
-                        uint8_t a = ascii2bin[(*inputPtr++) & 0x7F];
-                        uint8_t b = ascii2bin[(*inputPtr++) & 0x7F];
-                        uint8_t c = ascii2bin[(*inputPtr++) & 0x7F];
-                        uint8_t d = ascii2bin[(*inputPtr++) & 0x7F];
-
-                        // If the high-order bit is set on any parameters, break out, invalid base64 data
-                        if ((a | b | c | d) & 0x80)
-                        {
-                            decodeOkay = false;
-                            break;
-                        }
-
-                        uint32_t v = (((uint32_t)a) << 18L) |
-                                     (((uint32_t)b) << 12L) |
-                                     (((uint32_t)c) <<  6L) |
-                                     (((uint32_t)d));
-
-                        if (outputPtr < outputPtrEnd)
-                        {
-                            *outputPtr++ = (uint8_t)(v >> 16L) & 0xFF;
-                        }
-                        if (outputPtr < outputPtrEnd)
-                        {
-                            *outputPtr++ = (uint8_t)(v >>  8L) & 0xFF;
-                        }
-                        if (outputPtr < outputPtrEnd)
-                        {
-                            *outputPtr++ = (uint8_t)(v       ) & 0xFF;
-                        }
-                    }
-                }
-            }
+            outputBuffer.seek(outputBuffer.size());
         }
-        else
-        {
-            decodeOkay = outputBuffer.resetSize();
-        }
-        return decodeOkay;
+        return decoded;
     }
 
     void SecureBuffer::freeBuffer()

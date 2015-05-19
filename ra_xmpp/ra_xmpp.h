@@ -98,12 +98,12 @@ typedef enum xmpp_error_code
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Callback type declarations
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-typedef void (* xmpp_log_func_t)(void * const param); // TBD
+typedef void (* xmpp_log_func_t)(void *const param);  // TBD
 typedef void (* xmpp_status_func_t)(xmpp_status_t status);
-typedef void (* xmpp_connected_func_t)(void * const param, xmpp_error_code_t result,
-                                        xmpp_connection_handle_t connection);
-typedef void (* xmpp_disconnected_func_t)(void * const param, xmpp_error_code_t result,
-                                          xmpp_connection_handle_t connection);
+typedef void (* xmpp_connected_func_t)(void *const param, xmpp_error_code_t result,
+                                       xmpp_connection_handle_t connection);
+typedef void (* xmpp_disconnected_func_t)(void *const param, xmpp_error_code_t result,
+        xmpp_connection_handle_t connection);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Callback closure declarations
@@ -131,11 +131,11 @@ typedef struct xmpp_connection_callback
 typedef struct xmpp_context
 {
     size_t                              cb;
-    const xmpp_log_callback_t *     log_callback;
+    const xmpp_log_callback_t      *log_callback;
 } xmpp_context_t;
 
 
-void xmpp_context_init(xmpp_context_t * const context);
+void xmpp_context_init(xmpp_context_t *const context);
 void xmpp_context_destroy(xmpp_context_t *context);
 
 
@@ -155,8 +155,8 @@ typedef struct xmpp_host
     xmpp_protocol_t         protocol;
 } xmpp_host_t;
 
-void xmpp_host_init(xmpp_host_t * const host, const char * const host_name,
-                    uint16_t port, const char * const xmpp_domain,
+void xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
+                    uint16_t port, const char *const xmpp_domain,
                     xmpp_protocol_t protocol);
 void xmpp_host_destroy(xmpp_host_t *host);
 
@@ -179,9 +179,9 @@ typedef struct xmpp_identity
     InBandRegister_t    inband_registration;
 } xmpp_identity_t;
 
-void xmpp_identity_init(xmpp_identity_t * const identity, const char * const user_name,
-                        const char * const password, const char * const user_jid,
-                              InBandRegister_t inband_register);
+void xmpp_identity_init(xmpp_identity_t *const identity, const char *const user_name,
+                        const char *const password, const char *const user_jid,
+                        InBandRegister_t inband_register);
 void xmpp_identity_destroy(xmpp_identity_t *identity);
 
 
@@ -199,9 +199,9 @@ typedef struct xmpp_proxy
     uint16_t                proxy_port;
 } xmpp_proxy_t;
 
-void xmpp_proxy_init(xmpp_proxy_t * const proxy, const char * const host, uint16_t port,
+void xmpp_proxy_init(xmpp_proxy_t *const proxy, const char *const host, uint16_t port,
                      xmpp_proxy_type_t proxy_type);
-void xmpp_proxy_destroy(xmpp_proxy_t * proxy);
+void xmpp_proxy_destroy(xmpp_proxy_t *proxy);
 
 
 
@@ -210,7 +210,7 @@ void xmpp_proxy_destroy(xmpp_proxy_t * proxy);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // TODO: Get version (Check Version?)
 
-xmpp_handle_t xmpp_startup(const xmpp_context_t * const context);
+xmpp_handle_t xmpp_startup(const xmpp_context_t *const context);
 
 void xmpp_shutdown(xmpp_handle_t handle);
 
@@ -218,14 +218,14 @@ void xmpp_shutdown(xmpp_handle_t handle);
 int xmpp_global_shutdown_okay(void);
 
 
-xmpp_error_code_t xmpp_connect(xmpp_handle_t handle, const xmpp_host_t * const host,
-                               const xmpp_identity_t * const identity,
+xmpp_error_code_t xmpp_connect(xmpp_handle_t handle, const xmpp_host_t *const host,
+                               const xmpp_identity_t *const identity,
                                xmpp_connection_callback_t callback);
 
-xmpp_error_code_t xmpp_connect_with_proxy(xmpp_handle_t handle, const xmpp_host_t * const host,
-                                          const xmpp_identity_t * const identity,
-                                          const xmpp_proxy_t * const proxy,
-                                          xmpp_connection_callback_t callback);
+xmpp_error_code_t xmpp_connect_with_proxy(xmpp_handle_t handle, const xmpp_host_t *const host,
+        const xmpp_identity_t *const identity,
+        const xmpp_proxy_t *const proxy,
+        xmpp_connection_callback_t callback);
 
 // TODO: Add support-check
 
@@ -243,12 +243,12 @@ typedef struct
     const void   *abstract_context;
 } xmpp_message_context_t;
 
-typedef void (* xmpp_message_sent_func_t)(void * const param, xmpp_error_code_t result,
-                                          const void * const toRecipient,
-                                          const void * const msg, size_t messageOctets);
-typedef void (* xmpp_message_recv_func_t)(void * const param, xmpp_error_code_t result,
-                                          const void * const fromSender,
-                                          const void * const msg, size_t messageOctets);
+typedef void (* xmpp_message_sent_func_t)(void *const param, xmpp_error_code_t result,
+        const void *const toRecipient,
+        const void *const msg, size_t messageOctets);
+typedef void (* xmpp_message_recv_func_t)(void *const param, xmpp_error_code_t result,
+        const void *const fromSender,
+        const void *const msg, size_t messageOctets);
 
 typedef struct xmpp_message_callback
 {
@@ -265,10 +265,10 @@ typedef enum xmpp_transmission_options
 
 
 xmpp_message_context_t xmpp_message_context_create(xmpp_connection_handle_t connection,
-                                                   xmpp_message_callback_t callback);
+        xmpp_message_callback_t callback);
 
-xmpp_error_code_t xmpp_send_message(xmpp_message_context_t ctx, const char * const recipient,
-                                    const void * const message, const size_t messageOctets,
+xmpp_error_code_t xmpp_send_message(xmpp_message_context_t ctx, const char *const recipient,
+                                    const void *const message, const size_t messageOctets,
                                     xmpp_transmission_options_t options);
 
 void xmpp_message_context_destroy(xmpp_message_context_t ctx);
