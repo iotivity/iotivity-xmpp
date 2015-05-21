@@ -353,6 +353,8 @@ struct ContextWrapper
 
 
 
+            // TODO: Send message.
+            //       Call on_send if registered.
 
 
             return XMPP_ERR_FAIL;
@@ -613,9 +615,9 @@ extern "C"
             }
 
             // A copy of the buffer is made here to avoid having the next layer up retain the
-            // data buffer past the call. If optimization is desired (and messages are large), consider
-            // having this layer provide the buffers to use on demand instead of relying on the
-            // lifespan of the buffer at the next layer up.
+            // data buffer past the call. If optimization is desired (and messages are large),
+            // consider having this layer provide the buffers to use on demand instead of relying
+            // on the lifespan of the buffer at the next layer up.
             ByteBuffer tempBuffer(message, sizeInOctets);
 
             return ContextWrapper::sendMessage(handle, recipientStr, tempBuffer, options);
