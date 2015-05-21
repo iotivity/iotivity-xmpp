@@ -110,7 +110,7 @@ typedef void (* xmpp_disconnected_func_t)(void *const param, xmpp_error_code_t r
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 typedef struct xmpp_log_callback
 {
-    xmpp_log_func_t on_log;
+    xmpp_log_func_t       on_log;
     void                 *param;
 } xmpp_log_callback_t;
 
@@ -119,7 +119,7 @@ typedef struct xmpp_connection_callback
 {
     xmpp_connected_func_t       on_connected;
     xmpp_disconnected_func_t    on_disconnected;
-    void                           *param;
+    void                       *param;
 } xmpp_connection_callback_t;
 
 
@@ -130,7 +130,7 @@ typedef struct xmpp_connection_callback
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 typedef struct xmpp_context
 {
-    size_t                              cb;
+    size_t                          cb;
     const xmpp_log_callback_t      *log_callback;
 } xmpp_context_t;
 
@@ -254,7 +254,7 @@ typedef struct xmpp_message_callback
 {
     xmpp_message_sent_func_t    on_sent;
     xmpp_message_recv_func_t    on_received;
-    void                           *param;
+    void                       *param;
 } xmpp_message_callback_t;
 
 
