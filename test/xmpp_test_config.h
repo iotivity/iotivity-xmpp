@@ -29,15 +29,8 @@
 
 #include <xmpp/jabberid.h>
 
-const Iotivity::Xmpp::ProxyConfig g_proxy("proxy-us.intel.com", "1080",
-        Iotivity::Xmpp::ProxyConfig::ProxyType::ProxySOCKS5);
+const std::string DUMMY_TEST_HOST = "test-xmpp.dummy-host.com";
+const std::string DUMMY_TEST_PORT = "5222";
 
-const std::string JABBERDAEMON_TEST_HOST = "xmpp-dev-lb.api.intel.com";
-const std::string JABBERDAEMON_TEST_PORT = "5222";
-
-const std::string JABBERDAEMON_INTERNAL_TEST_HOST = "strophe-test.amr.corp.intel.com";
-const std::string JABBERDAEMON_INTERNAL_TEST_PORT = "5222";
-
-static const std::string JABBERDAEMON_TEST_URL = "xmpp-dev-lb.api.intel.com/http-bind";
 
 const Iotivity::Xmpp::JabberID MY_JID{"unittest"};

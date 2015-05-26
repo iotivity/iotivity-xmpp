@@ -31,6 +31,7 @@
 #include <xmpp/xmppregister.h>
 #include <connect/tcpclient.h>
 #include "xmpp_test_config.h"
+#include "xmpp_connect_config.h"
 
 extern "C"
 {
@@ -55,8 +56,17 @@ using namespace Iotivity::Xmpp;
 
 TEST(InBandRegistration, XEP0077_Register_Remove)
 {
-    auto remoteTcp = make_shared<TcpConnection>(JABBERDAEMON_TEST_HOST,
-                     JABBERDAEMON_TEST_PORT, g_proxy);
+    if (!xmpp_connect_config::hasConfig())
+    {
+        cout << "XEP0077_Register_Remove skipped. No DEFAULT XMPP config." << endl;
+        return;
+    }
+
+    const Iotivity::Xmpp::ProxyConfig proxy(xmpp_connect_config::proxyHost(),
+                                            xmpp_connect_config::proxyPort(),
+                                            Iotivity::Xmpp::ProxyConfig::ProxyType::ProxySOCKS5);
+    auto remoteTcp = make_shared<TcpConnection>(xmpp_connect_config::host(),
+                     xmpp_connect_config::port(), proxy);
 
     auto xmlConnection = make_shared<XmppConnection>(
                              static_pointer_cast<IStreamConnection>(remoteTcp));
@@ -64,7 +74,7 @@ TEST(InBandRegistration, XEP0077_Register_Remove)
     auto streamPromise = make_shared<promise<shared_ptr<IXmppStream>>>();
     auto streamFuture = streamPromise->get_future();
 
-    XmppConfig config(JabberID(""), "xmpp-dev");
+    XmppConfig config(JabberID(""), xmpp_connect_config::xmppDomain());
     config.requireTLSNegotiation();
     config.requestInBandRegistration();
 

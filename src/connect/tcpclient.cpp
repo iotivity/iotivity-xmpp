@@ -443,7 +443,8 @@ namespace Iotivity
                 m_work(m_ioService), m_sslContext(asio::ssl::context::tlsv12),
                 m_sslSocket(m_ioService, m_sslContext),
                 m_socket(m_sslSocket.next_layer()),
-                m_socketTimeout(m_ioService), m_ioServiceThreadId(), m_inPreNegotationRead()
+                m_socketTimeout(m_ioService), m_ioServiceThreadId(), m_inPreNegotationRead(),
+                m_ioServiceThread()
             {
                 m_inPreNegotationRead = 0;
             }
@@ -463,6 +464,7 @@ namespace Iotivity
             steady_timer m_socketTimeout;
             thread::id m_ioServiceThreadId;
             atomic_uint m_inPreNegotationRead;
+            thread m_ioServiceThread;
 
             TLSMode mode() const
             {
@@ -509,7 +511,7 @@ namespace Iotivity
 
             p_->m_socketTimeout.expires_from_now(chrono::seconds::max());
 
-            thread ioServiceThread([this]()
+            p_->m_ioServiceThread = thread([this]()
             {
                 while (!p_->m_ioService.stopped())
                 {
@@ -548,13 +550,16 @@ namespace Iotivity
                 p_->m_ioServiceStopped.set_value();
             });
 
-            p_->m_ioServiceThreadId = ioServiceThread.get_id();
-            ioServiceThread.detach();
+            p_->m_ioServiceThreadId = p_->m_ioServiceThread.get_id();
         }
 
         TcpConnection::~TcpConnection()
         {
             close();
+            if (p_->m_ioServiceThread.joinable())
+            {
+                p_->m_ioServiceThread.join();
+            }
         }
 
 

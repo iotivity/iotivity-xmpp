@@ -1,0 +1,48 @@
+<xmpp_config>
+  <config name="DEFAULT">
+    <proxyHost>
+      proxy-us.intel.com
+    </proxyHost>
+    <proxyPort>
+      1080
+    </proxyPort>
+    <host>
+      xmpp-dev-lb.api.intel.com
+    </host>
+    <port>
+      5222
+    </port>
+    <xmppDomain>
+      xmpp-dev
+    </xmppDomain>
+    <userName>
+    </userName>
+    <password>
+    </password>
+    <userJID>
+    </userJID>
+    <BOSHUrl>
+      xmpp-dev-lb.api.intel.com/http-bind
+    </BOSHUrl>
+  </config>
+  <config name="NO_PROXY">
+    <host>
+      strophe-test.amr.corp.intel.com
+    </host>
+    <port>
+      5222
+    </port>
+    <xmppDomain>
+      xmpp.local
+    </xmppDomain>
+    <userName>
+      unittest
+    </userName>
+    <password>
+      unitTestPassword
+    </password>
+    <userJID>
+      unittest@xmpp.local
+    </userJID>
+  </config>
+</xmpp_config>
