@@ -71,7 +71,12 @@ namespace Iotivity
             {
                 // Derived destructors must also call shutdownThreads() if their threads
                 // access the this pointer.
-                shutdown();
+                try
+                {
+                    shutdown();
+                }
+                catch (...)
+                {}
             }
 
             void shutdown()
@@ -85,13 +90,17 @@ namespace Iotivity
                         lock.unlock();
                         try
                         {
-                            i.second.first.join();
+                            if (std::this_thread::get_id() == i.second.first.get_id())
+                            {
+                                i.second.first.detach();
+                            }
+                            else
+                            {
+                                i.second.first.join();
+                            }
                         }
                         catch (...)
-                        {
-                            lock.lock();
-                            throw;
-                        }
+                        {}
                         lock.lock();
                     }
                 }

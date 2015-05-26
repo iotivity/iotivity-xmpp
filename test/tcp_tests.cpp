@@ -31,11 +31,13 @@
 #include <common/buffers.h>
 #include <common/logstream.h>
 
+#include "xmpp_connect_config.h"
+
 #include <iostream>
 
 #ifndef DISABLE_SUPPORT_NATIVE_XMPP_CLIENT
 
-static const std::string JABBERDAEMON_TEST_HOST = "xmpp-dev.iotivity.intel.com";
+static const std::string JABBERDAEMON_TEST_HOST = "xmpp-dev-lb.iotivity.intel.com";
 static const std::string JABBERDAEMON_TEST_PORT = "5222";
 
 using namespace std;

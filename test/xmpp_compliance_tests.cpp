@@ -59,7 +59,7 @@ using namespace Iotivity::XML;
 
 static const string SERVER_FIRST_RESPONSE =
     "<stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http://etherx.jabber.org/streams"
-    "\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" version=\"1.0\" xml:lang"
+    "\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" version=\"1.0\" xml:lang"
     "=\"en\"><stream:features><starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"><required/>"
     "</starttls><mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"><mechanism>PLAIN"
     "</mechanism><mechanism>DIGEST-MD5</mechanism><mechanism>SCRAM-SHA-1</mechanism>"
@@ -69,12 +69,12 @@ static const string SERVER_FIRST_RESPONSE =
 static const string CLIENT_START_TLS = "<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>";
 static const string SERVER_PROCEED_TLS = "<proceed xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>";
 static const string CLIENT_RESTART_STREAM =
-    "<stream:stream from=\"unittest\" to=\"xmpp-dev-lb.api.intel.co"
+    "<stream:stream from=\"unittest\" to=\"test-xmpp.dummy-host.co"
     "m\" version=\"1.0\" xml:lang=\"en\" xmlns=\"jabber:client\" "
     "xmlns:stream=\"http://etherx.jabber.org/streams\">";
 static const string SERVER_POST_TLS_RESPONSE =
     "<stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http://etherx.jabber.org/streams"
-    "\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" version=\"1.0\" xml:lang"
+    "\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" version=\"1.0\" xml:lang"
     "=\"en\"><stream:features><mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">"
     "<mechanism>PLAIN</mechanism><mechanism>DIGEST-MD5</mechanism><mechanism>SCRAM-SHA-1"
     "</mechanism></mechanisms><c xmlns=\"http://jabber.org/protocol/caps\" hash=\"sha-1\" "
@@ -82,7 +82,7 @@ static const string SERVER_POST_TLS_RESPONSE =
     "<register xmlns=\"http://jabber.org/features/iq-register\"/></stream:features>";
 static const string SERVER_POST_SASL_RESPONSE =
     "<stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http://etherx.jabber.org/streams"
-    "\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" version=\"1.0\" xml:lang"
+    "\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" version=\"1.0\" xml:lang"
     "=\"en\"><stream:features><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\"/><c xmln"
     "s=\"http://jabber.org/protocol/caps\" hash=\"sha-1\" node=\"http://www.dummy.ne"
     "t/en/ejabberd/\" ver=\"aIT+/ulfcbHXDKPkCA+iw9x5mU8=\"/><register xmlns=\"http://jabb"
@@ -120,7 +120,7 @@ TEST(Xmpp_Compliance, bind_mtn)
         {"", Segment::ExitWithStateIntact}
     };
 
-    XmppConfig config(MY_JID, JABBERDAEMON_TEST_HOST);
+    XmppConfig config(MY_JID, DUMMY_TEST_HOST);
 
     SecureBuffer password;
     password.write("unitTestPassword");
@@ -171,7 +171,7 @@ TEST(Xmpp_Compliance, bind_restart)
         {"", Segment::ExitWithStateIntact}
     };
 
-    XmppConfig config(MY_JID, JABBERDAEMON_TEST_HOST);
+    XmppConfig config(MY_JID, DUMMY_TEST_HOST);
 
     SecureBuffer password;
     password.write("unitTestPassword");
@@ -216,7 +216,7 @@ TEST(Xmpp_Compliance, bind_support)
         {"", Segment::ExitWithStateIntact}
     };
 
-    XmppConfig config(MY_JID, JABBERDAEMON_TEST_HOST);
+    XmppConfig config(MY_JID, DUMMY_TEST_HOST);
 
     SecureBuffer password;
     password.write("unitTestPassword");
@@ -263,7 +263,7 @@ TEST(Xmpp_Compliance, sasl_errors)
         {"", Segment::ExitWithStateIntact}
     };
 
-    XmppConfig config(MY_JID, JABBERDAEMON_TEST_HOST);
+    XmppConfig config(MY_JID, DUMMY_TEST_HOST);
 
     SecureBuffer password;
     password.write("unitTestPassword");
@@ -362,7 +362,7 @@ shared_ptr<IXmppStream> establishStream()
         {"", Segment::ExitWithStateIntact}
     };
 
-    XmppConfig config(MY_JID, JABBERDAEMON_TEST_HOST);
+    XmppConfig config(MY_JID, DUMMY_TEST_HOST);
 
     SecureBuffer password;
     password.write("unitTestPassword");
