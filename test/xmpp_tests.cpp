@@ -45,6 +45,7 @@
 
 #include "xmpp_test_config.h"
 #include "xmpp_dummy_server.h"
+#include "xmpp_connect_config.h"
 
 extern "C"
 {
@@ -72,9 +73,9 @@ TEST(XmppClient, XMPPConfig)
     saslTestOrder.push_back("EXTERNAL");
     saslTestOrder.push_back("ANONYMOUS");
 
-    XmppConfig config(MY_JID, JABBERDAEMON_TEST_HOST);
+    XmppConfig config(MY_JID, DUMMY_TEST_HOST);
     EXPECT_EQ(config.initiator(), MY_JID);
-    EXPECT_EQ(config.host(), JABBERDAEMON_TEST_HOST);
+    EXPECT_EQ(config.host(), DUMMY_TEST_HOST);
     EXPECT_EQ(config.language(), "en");
 #ifndef DISABLE_SUPPORT_XEP0077
     EXPECT_FALSE(config.isRequestingInBandRegistration());
@@ -92,7 +93,7 @@ TEST(XmppClient, XMPPConfig)
 
     XmppConfig copyConfig(config);
     EXPECT_EQ(copyConfig.initiator(), MY_JID);
-    EXPECT_EQ(copyConfig.host(), JABBERDAEMON_TEST_HOST);
+    EXPECT_EQ(copyConfig.host(), DUMMY_TEST_HOST);
     EXPECT_EQ(copyConfig.SASLOrder(), saslTestOrder);
     EXPECT_EQ(copyConfig.language(), "es");
 #ifndef DISABLE_SUPPORT_XEP0077
@@ -105,7 +106,7 @@ TEST(XmppClient, XMPPConfig)
     moveConfig = std::move(config);
     EXPECT_EQ(moveConfig.initiator(), MY_JID);
     EXPECT_EQ(moveConfig.language(), "es");
-    EXPECT_EQ(moveConfig.host(), JABBERDAEMON_TEST_HOST);
+    EXPECT_EQ(moveConfig.host(), DUMMY_TEST_HOST);
     EXPECT_EQ(moveConfig.SASLOrder(), saslTestOrder);
 #ifndef DISABLE_SUPPORT_XEP0077
     EXPECT_TRUE(moveConfig.isRequestingInBandRegistration());
@@ -117,11 +118,24 @@ TEST(XmppClient, XMPPConfig)
 TEST(XmppClient, XMPP_StreamEstablish)
 {
 #ifdef ENABLE_LIBSTROPHE
-    auto xmlConnection = make_shared<XmppStropheConnection>(JABBERDAEMON_INTERNAL_TEST_HOST,
-                         JABBERDAEMON_INTERNAL_TEST_PORT);
+    if (!xmpp_connect_config::hasConfig("NO_PROXY"))
 #else
-    auto remoteTcp = make_shared<TcpConnection>(JABBERDAEMON_TEST_HOST,
-                     JABBERDAEMON_TEST_PORT, g_proxy);
+    if (!xmpp_connect_config::hasConfig())
+#endif
+    {
+        cout << "XMPP_StreamEstablish skipped. No DEFAULT XMPP config." << endl;
+        return;
+    }
+
+#ifdef ENABLE_LIBSTROPHE
+    auto xmlConnection = make_shared<XmppStropheConnection>(xmpp_connect_config::host("NO_PROXY"),
+                         xmpp_connect_config::port("NO_PROXY"));
+#else
+    const Iotivity::Xmpp::ProxyConfig proxy(xmpp_connect_config::proxyHost(),
+                                            xmpp_connect_config::proxyPort(),
+                                            Iotivity::Xmpp::ProxyConfig::ProxyType::ProxySOCKS5);
+    auto remoteTcp = make_shared<TcpConnection>(xmpp_connect_config::host(),
+                     xmpp_connect_config::port(), proxy);
 
     auto xmlConnection = make_shared<XmppConnection>(
                              static_pointer_cast<IStreamConnection>(remoteTcp));
@@ -131,14 +145,15 @@ TEST(XmppClient, XMPP_StreamEstablish)
     auto streamFuture = streamPromise->get_future();
 
     SecureBuffer password;
-    password.write("unitTestPassword");
-    auto scramConfig = SaslScramSha1::Params::create("unittest", password);
-    auto plainConfig = SaslPlain::Params::create("unittest", password);
+    password.write(xmpp_connect_config::password());
+    auto scramConfig = SaslScramSha1::Params::create(xmpp_connect_config::userName(), password);
+    auto plainConfig = SaslPlain::Params::create(xmpp_connect_config::userName(), password);
 
 #ifdef ENABLE_LIBSTROPHE
-    XmppConfig config(JabberID("unittest@xmpp.local"), "xmpp.local");
+    XmppConfig config(JabberID(xmpp_connect_config::userJID("NO_PROXY")),
+                      xmpp_connect_config::xmppDomain("NO_PROXY"));
 #else
-    XmppConfig config(JabberID(""), "xmpp-dev");
+    XmppConfig config(JabberID(xmpp_connect_config::userJID()), xmpp_connect_config::xmppDomain());
 #endif
     config.requireTLSNegotiation();
     config.setSaslConfig("SCRAM-SHA-1", scramConfig);
@@ -166,7 +181,11 @@ TEST(XmppClient, XMPP_StreamEstablish)
                 auto message = doc->createElement("iq");
                 message->setAttribute("type", "get");
                 message->setAttribute("id", xmppStream->getNextID());
-                message->setAttribute("to", "xmpp-dev");
+#ifdef ENABLE_LIBSTROPHE
+                message->setAttribute("to", xmpp_connect_config::xmppDomain("NO_PROXY"));
+#else
+                message->setAttribute("to", xmpp_connect_config::xmppDomain());
+#endif
 
                 auto query = doc->createElement("query");
                 query->setAttribute("xmlns", "http://jabber.org/protocol/disco#info");
@@ -196,12 +215,26 @@ TEST(XmppClient, XMPP_StreamEstablish)
 
 TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
 {
+
 #ifdef ENABLE_LIBSTROPHE
-    auto xmlConnection = make_shared<XmppStropheConnection>(JABBERDAEMON_INTERNAL_TEST_HOST,
-                         JABBERDAEMON_INTERNAL_TEST_PORT);
+    if (!xmpp_connect_config::hasConfig("NO_PROXY"))
 #else
-    auto remoteTcp = make_shared<TcpConnection>(JABBERDAEMON_TEST_HOST,
-                     JABBERDAEMON_TEST_PORT, g_proxy);
+    if (!xmpp_connect_config::hasConfig())
+#endif
+    {
+        cout << "XMPP_StreamEstablish_Event_Callbacks skipped. No DEFAULT XMPP config." << endl;
+        return;
+    }
+
+#ifdef ENABLE_LIBSTROPHE
+    auto xmlConnection = make_shared<XmppStropheConnection>(xmpp_connect_config::host("NO_PROXY"),
+                         xmpp_connect_config::port("NO_PROXY"));
+#else
+    const Iotivity::Xmpp::ProxyConfig proxy(xmpp_connect_config::proxyHost(),
+                                            xmpp_connect_config::proxyPort(),
+                                            Iotivity::Xmpp::ProxyConfig::ProxyType::ProxySOCKS5);
+    auto remoteTcp = make_shared<TcpConnection>(xmpp_connect_config::host(),
+                     xmpp_connect_config::port(), proxy);
 
     auto xmlConnection = make_shared<XmppConnection>(
                              static_pointer_cast<IStreamConnection>(remoteTcp));
@@ -213,9 +246,9 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
     auto plainConfig = SaslPlain::Params::create("unittest", password);
 
 #ifdef ENABLE_LIBSTROPHE
-    XmppConfig config(JabberID("unittest@xmpp.local"), "xmpp.local");
+    XmppConfig config(JabberID("unittest@xmpp.local"), xmpp_connect_config::xmppDomain("NO_PROXY"));
 #else
-    XmppConfig config(JabberID(""), "xmpp-dev");
+    XmppConfig config(JabberID(""), xmpp_connect_config::xmppDomain());
 #endif
     config.requireTLSNegotiation();
     config.setSaslConfig("SCRAM-SHA-1", scramConfig);
@@ -299,31 +332,50 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
     EXPECT_EQ(status1, future_status::ready);
     if (status1 == future_status::ready)
     {
-        ASSERT_NO_THROW(streamCallbackFuture.get());
-
-        auto status2 = openCallbackFuture.wait_for(chrono::seconds(10));
-        EXPECT_EQ(status2, future_status::ready);
-        if (status2 == future_status::ready)
+        try
         {
-            ASSERT_NO_THROW(openCallbackFuture.get());
+            streamCallbackFuture.get();
 
-            cout << "OPENED" << endl;
-
-            EXPECT_NE(stream, nullptr);
-            if (stream)
+            auto status2 = openCallbackFuture.wait_for(chrono::seconds(10));
+            EXPECT_EQ(status2, future_status::ready);
+            if (status2 == future_status::ready)
             {
-                stream->close();
-            }
+                openCallbackFuture.get();
 
-            auto status3 = closedCallbackFuture.wait_for(chrono::seconds(5));
-            EXPECT_EQ(status3, future_status::ready);
-            if (status3 == future_status::ready)
-            {
-                ASSERT_NO_THROW(closedCallbackFuture.get());
+                cout << "OPENED" << endl;
 
-                cout << "CLOSED" << endl;
+                EXPECT_NE(stream, nullptr);
+                if (stream)
+                {
+                    stream->close();
+                }
+
+                auto status3 = closedCallbackFuture.wait_for(chrono::seconds(5));
+                EXPECT_EQ(status3, future_status::ready);
+                if (status3 == future_status::ready)
+                {
+                    try
+                    {
+                        closedCallbackFuture.get();
+                    }
+                    catch (...)
+                    {
+                        EXPECT_NO_THROW(throw);
+                    }
+
+                    cout << "CLOSED" << endl;
+                }
             }
         }
+        catch (...)
+        {
+            // NOTE: This is done instead of ASSERT_NO_THROW in lieu of adding
+            //       an object to clean up the callbacks as we leave the scope
+            //       due to an exception throw. If we don't clean up the callbacks
+            //       they will happen after the promises have already been cleaned up.
+            EXPECT_NO_THROW(throw);
+        }
+
     }
 
     client->onStreamCreated() -= streamCreatedCallback;
@@ -432,7 +484,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
         {   {"", Segment::WaitForSend},
             {"", Segment::IncompleteNegotation},
             {"<stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http"},
-            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" ver"},
+            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" ver"},
             {"sion=\"1.0\" xml:lang=\"en\"><stream"},
             {
                 ":features><starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/><mechani"
@@ -450,7 +502,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
             {"", Segment::IncompleteNegotation},
             {"<?xml version='1.0'?"},
             {"><stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http"},
-            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" ver"},
+            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" ver"},
             {"sion=\"1.0\" xml:lang=\"en\"><stream"},
             {
                 ":features><starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/><mechani"
@@ -468,7 +520,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
             {"", Segment::IncompleteNegotation},
             {"<?xml version='1.0'?"},
             {"><stream:stream xmlns=\"jabber:client\""},
-            {"id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" ver"},
+            {"id=\"65140440\" from=\"test-xmpp.dummy-host.com\" ver"},
             {"sion=\"1.0\" xml:lang=\"en\">"},
             {
                 "<stream:error><invalid-namespace xmlns=\"urn:ietf:params:xml:ns:xmpp-streams\"/>"
@@ -481,7 +533,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
             {"", Segment::IncompleteNegotation},
             {"<?xml version='1.0'?"},
             {"><s:stream xmlns=\"jabber:client\" xmlns:s=\"http"},
-            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" ver"},
+            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" ver"},
             {"sion=\"1.0\" xml:lang=\"en\">"},
             {
                 "<stream:error><bad-namespace-prefix xmlns=\"urn:ietf:params:xml:ns:xmpp-streams\"/>"
@@ -494,7 +546,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
             {"", Segment::IncompleteNegotation},
             {"<?xml version='1.0'?"},
             {"><stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http"},
-            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" ver"},
+            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" ver"},
             {"sion=\"2.1\" xml:lang=\"en\">"},
             {
                 "<stream:error><unsupported-version xmlns=\"urn:ietf:params:xml:ns:xmpp-streams\"/>"
@@ -508,7 +560,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
         /*        {{"", Segment::WaitForSend},
                  {"<?xml version='1.0' encoding='UTF-16'?"},
                  {"><s:stream xmlns=\"jabber:client\" xmlns:s=\"http"},
-                 {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" ver"},
+                 {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" ver"},
                  {"sion=\"1.0\" xml:lang=\"en\">"},
                  {"W", Segment::WaitForSend}},*/
 
@@ -517,7 +569,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
             {"PLAIN", Segment::UpdateSASLPreferences},
             {"<?xml version='1.0'?"},
             {"><stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http"},
-            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" ver"},
+            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" ver"},
             {"sion=\"1.0\" xml:lang=\"en\"><stream"},
             {
                 ":features><starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"><required/></starttls>"
@@ -531,13 +583,13 @@ TEST(XmppClient, XMPP_StreamParseTests)
             {"<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>", Segment::WaitForSend},
             {"<proceed xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>"},
             {
-                "<stream:stream from=\"unittest\" to=\"xmpp-dev-lb.api.intel.co"
+                "<stream:stream from=\"unittest\" to=\"test-xmpp.dummy-host.co"
                 "m\" version=\"1.0\" xml:lang=\"en\" xmlns=\"jabber:client\" "
                 "xmlns:stream=\"http://etherx.jabber.org/streams\">", Segment::WaitForSend
             },
             {
                 "<stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http"
-                "://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" "
+                "://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" "
                 "version=\"1.0\" xml:lang=\"en\"><stream:features>"
                 "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">"
                 "<mechanism>PLAIN</mechanism><mechanism>DIGEST-MD5</mechanism><mechanism>SCRAM-SHA-1"
@@ -553,13 +605,13 @@ TEST(XmppClient, XMPP_StreamParseTests)
             },
             {"<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>"},
             {
-                "<stream:stream from=\"unittest\" to=\"xmpp-dev-lb.api.intel.co"
+                "<stream:stream from=\"unittest\" to=\"test-xmpp.dummy-host.co"
                 "m\" version=\"1.0\" xml:lang=\"en\" xmlns=\"jabber:client\" "
                 "xmlns:stream=\"http://etherx.jabber.org/streams\">", Segment::WaitForSend
             },
             {
                 "<stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http"
-                "://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" "
+                "://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" "
                 "version=\"1.0\" xml:lang=\"en\"><stream:features>"
                 "<c xmlns=\"http://jabber.org/protocol/caps\" "
                 "hash=\"sha-1\" node=\"http://www.dummy.net/en/ejabberd/\" "
@@ -574,7 +626,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
             {"PLAIN", Segment::UpdateSASLPreferences},
             {"<?xml version='1.0'?"},
             {"><stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http"},
-            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" ver"},
+            {"://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" ver"},
             {"sion=\"1.0\" xml:lang=\"en\"><stream"},
             {
                 ":features><starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"><required/></starttls>"
@@ -588,13 +640,13 @@ TEST(XmppClient, XMPP_StreamParseTests)
             {"<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>", Segment::WaitForSend},
             {"<proceed xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>"},
             {
-                "<stream:stream from=\"unittest\" to=\"xmpp-dev-lb.api.intel.co"
+                "<stream:stream from=\"unittest\" to=\"test-xmpp.dummy-host.co"
                 "m\" version=\"1.0\" xml:lang=\"en\" xmlns=\"jabber:client\" "
                 "xmlns:stream=\"http://etherx.jabber.org/streams\">", Segment::WaitForSend
             },
             {
                 "<stream:stream xmlns=\"jabber:client\" xmlns:stream=\"http"
-                "://etherx.jabber.org/streams\" id=\"65140440\" from=\"xmpp-dev-lb.api.intel.com\" "
+                "://etherx.jabber.org/streams\" id=\"65140440\" from=\"test-xmpp.dummy-host.com\" "
                 "version=\"1.0\" xml:lang=\"en\"><stream:features>"
                 "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">"
                 "<mechanism>PLAIN</mechanism><mechanism>DIGEST-MD5</mechanism><mechanism>SCRAM-SHA-1"
@@ -652,7 +704,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
             password.write("unitTestPassword");
             auto plainConfig = SaslPlain::Params::create("unittest", password);
 
-            XmppConfig config(MY_JID, JABBERDAEMON_TEST_HOST);
+            XmppConfig config(MY_JID, DUMMY_TEST_HOST);
             config.overrideSASLOrder(SASLPreferences);
             config.setSaslConfig("PLAIN", plainConfig);
 
@@ -702,8 +754,19 @@ TEST(XmppClient, XMPP_StreamParseTests)
 
 TEST(XmppClient, DISABLED_Dummy_Chat_Test)
 {
-    auto remoteTcp = make_shared<TcpConnection>(JABBERDAEMON_TEST_HOST,
-                     JABBERDAEMON_TEST_PORT, g_proxy);
+
+    if (!xmpp_connect_config::hasConfig())
+    {
+        cout << "Dummy_Chat_Test skipped. No DEFAULT XMPP config." << endl;
+        return;
+    }
+
+    const Iotivity::Xmpp::ProxyConfig proxy(xmpp_connect_config::proxyHost(),
+                                            xmpp_connect_config::proxyPort(),
+                                            Iotivity::Xmpp::ProxyConfig::ProxyType::ProxySOCKS5);
+
+    auto remoteTcp = make_shared<TcpConnection>(xmpp_connect_config::host(),
+                     xmpp_connect_config::port(), proxy);
 
     auto xmlConnection = make_shared<XmppConnection>(
                              static_pointer_cast<IStreamConnection>(remoteTcp));
@@ -716,7 +779,7 @@ TEST(XmppClient, DISABLED_Dummy_Chat_Test)
     auto plainConfig = SaslPlain::Params::create("unitTestUserName1", password);
     auto scramConfig = SaslScramSha1::Params::create("unitTestUserName1", password);
 
-    XmppConfig config(JabberID(""), "xmpp-dev");
+    XmppConfig config(JabberID(""), xmpp_connect_config::xmppDomain());
     config.requireTLSNegotiation();
     config.setSaslConfig("PLAIN", plainConfig);
     config.setSaslConfig("SCRAM-SHA-1", scramConfig);
@@ -748,7 +811,7 @@ TEST(XmppClient, DISABLED_Dummy_Chat_Test)
                 auto message = doc->createElement("iq");
                 message->setAttribute("type", "get");
                 message->setAttribute("id", xmppStream->getNextID());
-                message->setAttribute("to", "xmpp-dev");
+                message->setAttribute("to", xmpp_connect_config::xmppDomain());
 
                 auto query = doc->createElement("query");
                 query->setAttribute("xmlns", "http://jabber.org/protocol/disco#items");
@@ -767,7 +830,7 @@ TEST(XmppClient, DISABLED_Dummy_Chat_Test)
                 auto message = doc->createElement("iq");
                 message->setAttribute("type", "get");
                 message->setAttribute("id", xmppStream->getNextID());
-                message->setAttribute("to", "xmpp-dev");
+                message->setAttribute("to", xmpp_connect_config::xmppDomain());
 
                 auto query = doc->createElement("query");
                 query->setAttribute("xmlns", "http://jabber.org/protocol/disco#info");
@@ -893,8 +956,18 @@ TEST(XmppClient, DISABLED_Dummy_Chat_Test)
 
 TEST(XmppClient, XMPP_Request_ID_Generation)
 {
-    auto remoteTcp = make_shared<TcpConnection>(JABBERDAEMON_TEST_HOST,
-                     JABBERDAEMON_TEST_PORT, g_proxy);
+    if (!xmpp_connect_config::hasConfig())
+    {
+        cout << "XMPP_Request_ID_Generation skipped. No DEFAULT XMPP config." << endl;
+        return;
+    }
+
+    const Iotivity::Xmpp::ProxyConfig proxy(xmpp_connect_config::proxyHost(),
+                                            xmpp_connect_config::proxyPort(),
+                                            Iotivity::Xmpp::ProxyConfig::ProxyType::ProxySOCKS5);
+
+    auto remoteTcp = make_shared<TcpConnection>(xmpp_connect_config::host(),
+                     xmpp_connect_config::port(), proxy);
 
     auto xmlConnection = make_shared<XmppConnection>(
                              static_pointer_cast<IStreamConnection>(remoteTcp));
@@ -902,7 +975,7 @@ TEST(XmppClient, XMPP_Request_ID_Generation)
     auto streamPromise = make_shared<promise<shared_ptr<IXmppStream>>>();
     auto streamFuture = streamPromise->get_future();
 
-    XmppConfig config(JabberID(""), "xmpp-dev");
+    XmppConfig config(JabberID(""), xmpp_connect_config::xmppDomain());
 
     auto client = XmppClient::create();
     ASSERT_NO_THROW(client->initiateXMPP(config, xmlConnection, streamPromise));
@@ -1173,13 +1246,13 @@ TEST(XmppClient, XMPP_Sasl_Prep)
 
 TEST(XmppClient, XMPP_StreamEstablishOverBOSH)
 {
-    auto remoteConnect = make_shared<HttpCurlConnection>(JABBERDAEMON_TEST_URL);
+    auto remoteConnect = make_shared<HttpCurlConnection>(xmpp_connect_config::BOSHUrl());
 
     remoteConnect->setProxy(ProxyConfig::queryProxy());
 
     shared_ptr<ConnectionManager> manager = ConnectionManager::create();
     ASSERT_NE(manager, nullptr);
-    BOSHConfig boshConfig(JABBERDAEMON_TEST_HOST);
+    BOSHConfig boshConfig(xmpp_connect_config::host());
 
     boshConfig.setUseKeys(true);
     //auto xmppBOSH = make_shared<XmppBOSHConnection>(manager, remoteConnect, boshConfig);
@@ -1196,7 +1269,7 @@ TEST(XmppClient, XMPP_StreamEstablishOverBOSH)
     password.write("unitTestPassword");
     auto plainConfig = SaslPlain::Params::create("unittest", password);
 
-    XmppConfig config("", "xmpp-dev");
+    XmppConfig config("", xmpp_connect_config::xmppDomain());
     config.requireTLSNegotiation();
     config.setSaslConfig("PLAIN", plainConfig);
 

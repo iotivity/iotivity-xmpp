@@ -34,6 +34,7 @@
 #include <common/bufferencrypt.h>
 
 #include "xmpp_test_config.h"
+#include "xmpp_connect_config.h"
 
 #include <openssl/sha.h>
 
@@ -50,16 +51,16 @@ using namespace Iotivity::Xmpp;
 
 TEST(BOSH, BOSHConfig)
 {
-    BOSHConfig config(JABBERDAEMON_TEST_HOST);
-    EXPECT_EQ(config.host(), JABBERDAEMON_TEST_HOST);
+    BOSHConfig config(DUMMY_TEST_HOST);
+    EXPECT_EQ(config.host(), DUMMY_TEST_HOST);
 
     BOSHConfig copyConfig(config);
-    EXPECT_EQ(copyConfig.host(), JABBERDAEMON_TEST_HOST);
+    EXPECT_EQ(copyConfig.host(), DUMMY_TEST_HOST);
 
     BOSHConfig moveConfig;
     EXPECT_EQ(moveConfig.host(), "");
     moveConfig = std::move(config);
-    EXPECT_EQ(moveConfig.host(), JABBERDAEMON_TEST_HOST);
+    EXPECT_EQ(moveConfig.host(), DUMMY_TEST_HOST);
 }
 
 TEST(BOSH, TestPromise)
@@ -75,13 +76,23 @@ TEST(BOSH, TestPromise)
 
 TEST(BOSH, TestClientConnection)
 {
-    auto connection = make_shared<HttpCurlConnection>(JABBERDAEMON_TEST_URL);
+#ifdef ENABLE_LIBSTROPHE
+    if (!xmpp_connect_config::hasConfig("NO_PROXY"))
+#else
+    if (!xmpp_connect_config::hasConfig())
+#endif
+    {
+        cout << "TestClientConnection skipped. No XMPP config." << endl;
+        return;
+    }
+
+    auto connection = make_shared<HttpCurlConnection>(xmpp_connect_config::BOSHUrl());
 
     connection->setProxy(ProxyConfig::queryProxy());
 
     shared_ptr<ConnectionManager> manager = ConnectionManager::create();
     ASSERT_NE(manager, nullptr);
-    BOSHConfig config(JABBERDAEMON_TEST_HOST);
+    BOSHConfig config(xmpp_connect_config::host());
 
     config.setUseKeys(true);
 

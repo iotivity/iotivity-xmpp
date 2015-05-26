@@ -1658,14 +1658,17 @@ namespace Iotivity
         void XmppClient::queueReadAction(shared_ptr<IXmppStream> stream,
                                          shared_ptr<IXmppConnection> remoteServer)
         {
-            if (remoteServer)
+            auto self = shared_from_this();
+            if (remoteServer && self)
             {
-                auto readAction = [this, remoteServer, stream](XmppContext &)
+                weak_ptr<XmppClient> weakSelf(self);
+                auto readAction = [weakSelf, remoteServer, stream](XmppContext &)
                 {
                     remoteServer->async_receive(
-                        [this, remoteServer, stream](connect_error ec, XMLElement::Ptr element)
+                        [weakSelf, remoteServer, stream](connect_error ec, XMLElement::Ptr element)
                     {
-                        if (element && ec.succeeded())
+                        auto self = weakSelf.lock();
+                        if (self && element && ec.succeeded())
                         {
                             WITH_LOG_READS
                             (
@@ -1679,9 +1682,9 @@ namespace Iotivity
                             // Continue reading by recursively queuing up a new read action.
                             // Note that this will not consume stack resources as the next
                             // read is queued up on the XmppClient action queue.
-                            this->queueReadAction(stream, remoteServer);
+                            self->queueReadAction(stream, remoteServer);
                         }
-                        else if (ec.errorType() == connect_error::etConnectError() &&
+                        else if (self && ec.errorType() == connect_error::etConnectError() &&
                                  ec.errorCode() == connect_error::ecTLSNegotiationInProgress)
                         {
                             // TODO: Change to queue TLS negotiated action
@@ -1689,7 +1692,7 @@ namespace Iotivity
                             // Continue reading by recursively queuing up a new read action.
                             // Note that this will not consume stack resources as the next
                             // read is queued up on the XmppClient action queue.
-                            this->queueReadAction(stream, remoteServer);
+                            self->queueReadAction(stream, remoteServer);
                         }
                         else
                         {
