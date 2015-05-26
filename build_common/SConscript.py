@@ -97,8 +97,6 @@ print "HOST:", platform_host()
 print "PLATFORM:", env['PLATFORM']
 print "TARGET_ARCH:", platform_arch()
 
-
-
 # Get required meta-build tools that are not always present on the host.
 #if platform_host() == 'windows':
 #    if not env.WhereIs('7z'):
@@ -169,6 +167,15 @@ env['ROOT_DIR'] = env.GetLaunchDir()+'/..'
 
 Help(help_vars.GenerateHelpText(env))
 
+if not env['VERBOSE']:
+    env['CCCOMSTR'] = "Compiling $TARGET"
+    env['SHCCCOMSTR'] = "Compiling $TARGET"
+    env['ARCOMSTR'] = "Archiving $TARGET"
+    env['RANLIBCOMSTR'] = "Ranlib $TARGET"
+    env['CXXCOMSTR'] = "Compiling $TARGET"
+    env['SHCXXCOMSTR'] = "Compiling $TARGET"
+    env['LINKCOMSTR'] = "Linking $TARGET"
+    env['SHLINKCOMSTR'] = "Linking $TARGET"
 
 # Export the default environment (without build targets)
 Export('env')

@@ -31,13 +31,20 @@ gmock_env = env.Clone()
 
 target_os = gmock_env.get('TARGET_OS')
 
+src_dir= 'gmock-1.7.0/'
+tar_file = 'gmock-1.7.0.zip'
+tar_url = 'https://googlemock.googlecode.com/files/gmock-1.7.0.zip'
+
+if not os.path.exists(src_dir):
+    target_zip = gmock_env.URLDownload(tar_file, tar_url)
+    target_dir = gmock_env.UnpackAll(src_dir+'configure', tar_file)
+
 
 if target_os in ['windows', 'winrt']:
     # Build gmock as a third-party solution    
     #env.BuildSolution(target = "", source = src_dir+'/msvc/2010/gmock.sln')
     pass
 else:
-    src_dir = './'
     libs_dir = src_dir+"lib/.libs/"
 
     make_file = gmock_env.Configure(target = src_dir+'Makefile', source = src_dir+'configure')
@@ -60,7 +67,3 @@ else:
                      LIBPATH = [dir_offset_from_current(libs_dir),
                                 dir_offset_from_current(src_dir+'gtest/lib/.libs/')])
     
-
-
-
-
