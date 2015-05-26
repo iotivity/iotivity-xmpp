@@ -27,6 +27,7 @@
 #include <gtest/gtest.h>
 
 #include <common/logstream.h>
+#include "xmpp_connect_config.h"
 
 #include <random>
 
@@ -54,7 +55,10 @@ namespace Iotivity
     class ExtendedTestEventListener: public EmptyTestEventListener
     {
         public:
-            //virtual void OnTestProgramStart(const UnitTest& /*unit_test*/) {}
+            virtual void OnTestProgramStart(const UnitTest & /*unit_test*/)
+            {
+                xmpp_connect_config::loadConfig();
+            }
             //virtual void OnTestIterationStart(const UnitTest& /*unit_test*/, int /*iteration*/) {}
             //virtual void OnEnvironmentsSetUpStart(const UnitTest& /*unit_test*/) {}
             //virtual void OnEnvironmentsSetUpEnd(const UnitTest& /*unit_test*/) {}
