@@ -41,10 +41,35 @@ namespace Iotivity
     {
         static const string XMPP_REGISTER_QUERY_NAMESPACE = "jabber:iq:register";
 
+        struct InBandParamsImpl
+        {
+            InBandParamsImpl(): m_registrationParams() {}
+            InBandParamsImpl(const InBandParamsImpl &p):
+                m_registrationParams(p.m_registrationParams)
+            {}
+
+            std::map<std::string, std::string> m_registrationParams;
+        };
+
+        void InBandParamsImplDelete::operator()(InBandParamsImpl *p)
+        {
+            delete p;
+        }
+
+
+        //////////
         shared_ptr<InBandRegistration::Params> InBandRegistration::Params::create()
         {
             return shared_ptr<Params>(new Params);
         }
+
+        InBandRegistration::Params::Params():
+            p_(new InBandParamsImpl())
+        {}
+
+        InBandRegistration::Params::Params(const Params &params):
+            p_(new InBandParamsImpl(*params.p_))
+        {}
 
         bool InBandRegistration::Params::supportsExtension(const string &extensionName) const
         {
@@ -53,13 +78,13 @@ namespace Iotivity
 
         void InBandRegistration::Params::setRegistrationParam(const string &fieldName, const string &value)
         {
-            m_registrationParams[fieldName] = value;
+            p_->m_registrationParams[fieldName] = value;
         }
 
         string InBandRegistration::Params::registrationParam(const string &fieldName) const
         {
-            const auto f = m_registrationParams.find(fieldName);
-            return f != m_registrationParams.end() ? f->second : "";
+            const auto f = p_->m_registrationParams.find(fieldName);
+            return f != p_->m_registrationParams.end() ? f->second : "";
         }
 
 
