@@ -212,7 +212,7 @@ void xmpp_proxy_destroy(xmpp_proxy_t *proxy);
 
 xmpp_handle_t xmpp_startup(const xmpp_context_t *const context);
 
-void xmpp_shutdown(xmpp_handle_t handle);
+void xmpp_shutdown_xmpp(xmpp_handle_t handle);
 
 // TEST-only function to verify that shutdown will not leak resources.
 int xmpp_global_shutdown_okay(void);

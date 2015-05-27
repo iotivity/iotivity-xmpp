@@ -311,7 +311,7 @@ xmpp_handle_t xmpp_startup(const xmpp_context_t *const context)
     return contextHandle;
 }
 
-void xmpp_shutdown(xmpp_handle_t handle)
+void xmpp_shutdown_xmpp(xmpp_handle_t handle)
 {
     // TODO: Add valid-handle lookup....
     if (handle.abstract_handle)
