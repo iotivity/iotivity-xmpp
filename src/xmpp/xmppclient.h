@@ -72,6 +72,7 @@ XMPP_TEMPLATE template class XMPP_API std::shared_ptr<Iotivity::StreamBuffer>;
 XMPP_TEMPLATE template class XMPP_API std::unique_ptr<Iotivity::Xmpp::XmppClientPimpl,
         Iotivity::Xmpp::XmppClientPimplDelete>;
 XMPP_TEMPLATE template class XMPP_API std::list<std::string>;
+class XMPP_API std::recursive_mutex;
 
 #endif
 
@@ -114,6 +115,7 @@ namespace Iotivity
                                    XML::XMLElement::Ptr &streamElement);
 
             private:
+                std::recursive_mutex m_mutex;
                 bool m_closed;
                 std::shared_ptr<IStreamConnection> m_streamConnection;
                 bool m_restartPending;

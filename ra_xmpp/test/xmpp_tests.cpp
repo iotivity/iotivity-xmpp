@@ -127,12 +127,13 @@ TEST(ra_xmpp, xmpp_proxy)
 
 TEST(ra_xmpp, xmpp_startup_shutdown)
 {
+    EXPECT_TRUE(xmpp_global_shutdown_okay() == 1);
     xmpp_context_t context;
     xmpp_context_init(&context);
     xmpp_handle_t handle = xmpp_startup(&context);
     EXPECT_NE(handle.abstract_handle, nullptr);
 
-    xmpp_shutdown(handle);
+    xmpp_shutdown_xmpp(handle);
     xmpp_context_destroy(&context);
 
     EXPECT_TRUE(xmpp_global_shutdown_okay() == 1);
@@ -229,22 +230,29 @@ TEST(ra_xmpp, xmpp_remote_connect)
 
     EXPECT_EQ(xmpp_connect_with_proxy(handle, &host, &identity, &proxy, callback), XMPP_ERR_OK);
 
+    cout << "BEFORE CONNECTED CALLBACK" << endl;
     // Wait for the connect callback.
     EXPECT_NO_THROW(connect_callback_wrapper.connectedRan().get());
 
+    cout << "AFTER CONNECTED CALLBACK" << endl;
     // Close.
     EXPECT_EQ(xmpp_close(connect_callback_wrapper.getConnection()), XMPP_ERR_OK);
+
+    cout << "AFTER XMPP CLOSE" << endl;
 
     // Wait for the close callback.
     EXPECT_NO_THROW(connect_callback_wrapper.disconnectedRan().get());
 
+    cout << "AFTER DISCONNECTED CALLBACK" << endl;
 
     xmpp_proxy_destroy(&proxy);
     xmpp_identity_destroy(&identity);
     xmpp_host_destroy(&host);
 
-    xmpp_shutdown(handle);
+    xmpp_shutdown_xmpp(handle);
     xmpp_context_destroy(&context);
 
     EXPECT_TRUE(xmpp_global_shutdown_okay() == 1);
+
+    cout << "AFTER TEST" << endl;
 }

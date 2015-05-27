@@ -148,8 +148,8 @@ namespace Iotivity
 
         //////////
         XmppConnection::XmppConnection(shared_ptr<IStreamConnection> streamConnection):
-            m_closed(false), m_streamConnection(streamConnection), m_restartPending(true),
-            m_workingBuffer(make_shared<StreamBuffer>())
+            m_mutex(), m_closed(false), m_streamConnection(streamConnection),
+            m_restartPending(true), m_workingBuffer(make_shared<StreamBuffer>())
         {}
 
         XmppConnection::~XmppConnection()
@@ -175,15 +175,20 @@ namespace Iotivity
 
         void XmppConnection::close()
         {
-            if (!m_closed)
+            if (m_streamConnection)
             {
-                if (m_streamConnection)
+                bool closed;
+                {
+                    lock_guard<recursive_mutex> lock(m_mutex);
+                    closed = m_closed;
+                    m_closed = true;
+                }
+                if (!closed)
                 {
                     WITH_LOG_INFO
                     (
                         dout << "CLOSING" << endl;
                     )
-                    m_closed = true;
                     try
                     {
                         string payloadStr = "</stream:stream>";
@@ -202,10 +207,10 @@ namespace Iotivity
                     }
                     catch (...) {}
                 }
-                else
-                {
-                    throw connect_error(LocalError(LocalError::ecInvalidParameter));
-                }
+            }
+            else
+            {
+                throw connect_error(LocalError(LocalError::ecInvalidParameter));
             }
         }
 

@@ -13,8 +13,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CCFXmpp_Tests", "CCFXmpp_Te
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{164D6B3D-E75D-4D1C-A84F-66540173FF13}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\external\gmock\msvc\2010\gmock.vcxproj", "{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CCFXmppDll", "CCFXmppDll\CCFXmppDll.vcxproj", "{F4279520-90FA-4053-BE67-80AEC1A432A3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A1AE5130-B8EB-4E83-98C4-A674ED2CD981} = {A1AE5130-B8EB-4E83-98C4-A674ED2CD981}
@@ -26,6 +24,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ra_xmpp", "ra_xmpp\ra_xmpp.
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ra_xmpp_tests", "ra_xmpp_tests\ra_xmpp_tests.vcxproj", "{D06073EB-8ADB-4D23-AD8C-FBD15F2EB620}"
+	ProjectSection(ProjectDependencies) = postProject
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5} = {34681F0D-CE45-415D-B5F2-5C662DFE3BD5}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\external\gmock\gmock-1.7.0\msvc\2010\gmock.vcxproj", "{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,18 +64,6 @@ Global
 		{D2448F7F-59B1-4E7A-AAB9-56CD5FA6A2CF}.Release|Win32.Build.0 = Release|Win32
 		{D2448F7F-59B1-4E7A-AAB9-56CD5FA6A2CF}.Release|x64.ActiveCfg = Release|x64
 		{D2448F7F-59B1-4E7A-AAB9-56CD5FA6A2CF}.Release|x64.Build.0 = Release|x64
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|Win32.ActiveCfg = Debug|Win32
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|Win32.Build.0 = Debug|Win32
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|x64.ActiveCfg = Debug|x64
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|x64.Build.0 = Debug|x64
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|Win32.ActiveCfg = Release|Win32
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|Win32.Build.0 = Release|Win32
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|x64.ActiveCfg = Release|x64
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|x64.Build.0 = Release|x64
 		{F4279520-90FA-4053-BE67-80AEC1A432A3}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{F4279520-90FA-4053-BE67-80AEC1A432A3}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{F4279520-90FA-4053-BE67-80AEC1A432A3}.Debug|Win32.ActiveCfg = Debug|Win32
@@ -109,13 +100,24 @@ Global
 		{D06073EB-8ADB-4D23-AD8C-FBD15F2EB620}.Release|Win32.Build.0 = Release|Win32
 		{D06073EB-8ADB-4D23-AD8C-FBD15F2EB620}.Release|x64.ActiveCfg = Release|x64
 		{D06073EB-8ADB-4D23-AD8C-FBD15F2EB620}.Release|x64.Build.0 = Release|x64
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|Win32.Build.0 = Debug|Win32
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|x64.ActiveCfg = Debug|x64
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Debug|x64.Build.0 = Debug|x64
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|Win32.ActiveCfg = Release|Win32
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|Win32.Build.0 = Release|Win32
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|x64.ActiveCfg = Release|x64
+		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D2448F7F-59B1-4E7A-AAB9-56CD5FA6A2CF} = {164D6B3D-E75D-4D1C-A84F-66540173FF13}
-		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5} = {164D6B3D-E75D-4D1C-A84F-66540173FF13}
 		{D06073EB-8ADB-4D23-AD8C-FBD15F2EB620} = {164D6B3D-E75D-4D1C-A84F-66540173FF13}
 	EndGlobalSection
 EndGlobal
