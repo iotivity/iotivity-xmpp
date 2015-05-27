@@ -89,6 +89,7 @@ TEST(XmppClient, XMPPConfig)
 #ifndef DISABLE_SUPPORT_XEP0077
     config.requestInBandRegistration();
     EXPECT_TRUE(config.isRequestingInBandRegistration());
+
 #endif
 
     XmppConfig copyConfig(config);

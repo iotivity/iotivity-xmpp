@@ -27,6 +27,7 @@
 
 #include "../include/xmpp_feature_flags.h"
 #include "xmppextension.h"
+#include "../include/ccfxmpp.h"
 
 #include <map>
 
@@ -34,6 +35,29 @@
 // XEP-0077 [In-Band Registration]
 
 #ifndef DISABLE_SUPPORT_XEP0077
+
+
+namespace Iotivity
+{
+    namespace Xmpp
+    {
+        struct InBandParamsImpl;
+        /// @cond HIDDEN_SYMBOLS
+        struct InBandParamsImplDelete
+        {
+            void operator()(InBandParamsImpl *p);
+        };
+        /// @endcond
+    }
+}
+
+
+
+#ifdef _WIN32
+XMPP_TEMPLATE template class XMPP_API std::unique_ptr<Iotivity::Xmpp::InBandParamsImpl,
+        Iotivity::Xmpp::InBandParamsImplDelete>;
+#endif
+
 
 namespace Iotivity
 {
@@ -45,10 +69,11 @@ namespace Iotivity
         class InBandRegistration: public XmppExtension
         {
             public:
-                class Params: public IExtensionParams
+                class XMPP_API Params: public IExtensionParams
                 {
                     public:
-                        Params() = default;
+                        Params();
+                        Params(const Params &);
                         static std::shared_ptr<Params> create();
 
                         virtual bool supportsExtension(const std::string &extensionName) const override;
@@ -56,7 +81,9 @@ namespace Iotivity
                         void setRegistrationParam(const std::string &fieldName, const std::string &value);
                         std::string registrationParam(const std::string &fieldName) const;
                     private:
-                        std::map<std::string, std::string> m_registrationParams;
+                        // NOTE: This is not ideal, but the export of this class from a DLL
+                        //       makes the std::map contained within the Impl a liability.
+                        std::unique_ptr<InBandParamsImpl, InBandParamsImplDelete> p_;
                 };
             public:
                 InBandRegistration(std::shared_ptr<IXmppStream> overStream);

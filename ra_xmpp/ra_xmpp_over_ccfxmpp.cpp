@@ -42,6 +42,7 @@
 
 #include <xmpp/xmppconfig.h>
 #include <xmpp/sasl.h>
+#include <xmpp/xmppregister.h>
 
 #include <connect/proxy.h>
 
@@ -106,6 +107,8 @@ struct ContextWrapper
                      const string &xmppDomain, InBandRegister inbandRegistrationAction,
                      xmpp_connection_callback_t callback)
         {
+            (void)inbandRegistrationAction;
+
 #ifdef ENABLE_LIBSTROPHE
             auto xmlConnection = make_shared<XmppStropheConnection>(host, port);
 #else
@@ -120,6 +123,18 @@ struct ContextWrapper
 
             config.setSaslConfig("SCRAM-SHA-1", SaslScramSha1::Params::create(userName, password));
             config.setSaslConfig("PLAIN", SaslPlain::Params::create(userName, password));
+
+#ifndef DISABLE_SUPPORT_XEP0077
+            if (inbandRegistrationAction != XMPP_NO_IN_BAND_REGISTER)
+            {
+                config.requestInBandRegistration();
+                auto registrationParams = InBandRegistration::Params::create();
+                registrationParams->setRegistrationParam("username", userName);
+                string passwordStr((const char *)password.get(), password.size());
+                registrationParams->setRegistrationParam("password", passwordStr);
+                config.setExtensionConfig(InBandRegistration::extensionName(), registrationParams);
+            }
+#endif
 
             m_client = XmppClient::create();
 

@@ -1011,13 +1011,17 @@ namespace Iotivity
                         auto registration = make_shared<InBandRegistration>(shared_from_this());
                         addExtension(registration);
 
-                        registration->registerUser([registration](const connect_error & ce)
+                        registration->registerUser([this, registration](const connect_error & ce)
                         {
                             (void)ce;
                             WITH_LOG_INFO
                             (
                                 dout << "REGISTRATION RESULT: " << ce.toString() << endl;
                             )
+
+                            // Regardless of the success/fail state, still attempt a SASL
+                            // negotiation. It is possible/likely we are already registered.
+                            negotiateSASL();
                         });
                     }
 #endif
