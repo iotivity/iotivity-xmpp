@@ -161,7 +161,7 @@ namespace Iotivity
 
         /// @brief Interface describing a set of parameters to be attached to an extension
         ///        when the extension is attached to a stream.
-        struct IExtensionParams
+        struct XMPP_API IExtensionParams
         {
             virtual ~IExtensionParams() {}
 
