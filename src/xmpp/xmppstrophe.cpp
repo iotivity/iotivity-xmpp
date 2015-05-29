@@ -620,7 +620,7 @@ namespace Iotivity
             set<shared_ptr<IXmppStream>> m_streams;
             promise<void> m_runStopPromise;
             future<void> m_runStopped;
-            OneShotSyncEvent<XmppStreamCreatedEvent> m_streamCreated;
+            SyncEvent<XmppStreamCreatedEvent> m_streamCreated;
         };
         /// @endcond
 

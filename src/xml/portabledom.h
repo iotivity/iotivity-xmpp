@@ -27,6 +27,7 @@
 #pragma once
 
 #include "../include/xmpp_feature_flags.h"
+#include "../include/ccfxmpp.h"
 
 #if defined(_WIN32) && !defined(_WINRT) && defined(PORTABLE_STACK)
 #include <rapidxml/rapidxml.hpp>
@@ -42,6 +43,24 @@
 #include <sstream>
 
 typedef std::recursive_mutex local_recursive_mutex;
+
+
+
+namespace Iotivity
+{
+    namespace XML
+    {
+        class XMLDocument;
+    }
+}
+
+#ifdef _WIN32
+XMPP_TEMPLATE template class XMPP_API std::weak_ptr<Iotivity::XML::XMLDocument>;
+class XMPP_API std::recursive_mutex;
+XMPP_TEMPLATE template class XMPP_API rapidxml::xml_document<>;
+#endif
+
+
 
 namespace Iotivity
 {
@@ -73,7 +92,7 @@ namespace Iotivity
 
         /// @brief Wrapper to massage the syntax of the RapidXML document type towards
         /// the MSXML API and to manage the lifespan of the XML source strings.
-        class XMLDocument: public std::enable_shared_from_this<XMLDocument>
+        class XMPP_API XMLDocument: public std::enable_shared_from_this<XMLDocument>
         {
             public:
                 enum class EndingTest

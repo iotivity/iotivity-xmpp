@@ -89,6 +89,7 @@ namespace Iotivity
                     ecStreamResourceNotBound = -1031,
                     ecAttemptToRestartBoundStream = -1032,
                     ecErrorEncodingNonce = -1033,
+                    ecInvalidMessage = -1034
 
                 };
 

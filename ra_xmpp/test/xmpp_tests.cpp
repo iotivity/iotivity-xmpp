@@ -39,6 +39,7 @@
 #include <thread>
 #include <future>
 #include <random>
+#include <list>
 
 using namespace std;
 
@@ -276,6 +277,7 @@ TEST(ra_xmpp, xmpp_remote_connect)
 
 
 const char *TEST_SESSION_GUID = "F1AED571-A1E4-4DB7-BF1C-41865C44E689";
+const char *TEST_SESSION2_GUID = "F1AED571-A1E4-4DB7-BF1C-41865C44E690";
 const char *TEST_APP_GUID = "7e14b5f9-914c-4911-8fbf-af58de8825fb";
 const char TEST_APP_KEY[] = "RA XMPP CLIENT SECRET MAY BE REVOKED AT ANY TIME";
 
@@ -358,6 +360,8 @@ TEST(ra_xmpp, xmpp_remote_register_connect)
     xmpp_host_init(&host, JABBERDAEMON_TEST_HOST, JABBERDAEMON_TEST_PORT, JABBERDAEMON_TEST_DOMAIN,
                    XMPP_PROTOCOL_XMPP);
 
+    //xmpp_host_init(&host, "localhost", JABBERDAEMON_TEST_PORT, "xmpp.local",
+    //XMPP_PROTOCOL_XMPP);
 
     string userName;
     string password;
@@ -378,6 +382,7 @@ TEST(ra_xmpp, xmpp_remote_register_connect)
     callback.param = &connect_callback_wrapper;
 
     EXPECT_EQ(xmpp_connect_with_proxy(handle, &host, &identity, &proxy, callback), XMPP_ERR_OK);
+    //EXPECT_EQ(xmpp_connect(handle, &host, &identity, callback), XMPP_ERR_OK);
 
     // Wait for the connect callback.
     EXPECT_NO_THROW(connect_callback_wrapper.connectedRan().get());
@@ -396,4 +401,245 @@ TEST(ra_xmpp, xmpp_remote_register_connect)
     xmpp_context_destroy(&context);
 
     EXPECT_TRUE(xmpp_global_shutdown_okay() == 1);
+}
+
+
+struct SimpleConnection
+{
+    SimpleConnection(const string &instanceName, xmpp_handle_t handle, const xmpp_identity_t &identity,
+                     list<xmpp_identity_t> targets):
+        m_instance(instanceName), m_identity(identity)
+    {
+        for (const auto &t : targets)
+        {
+            if (t.user_jid)
+            {
+                m_targets.push_back(t.user_jid);
+            }
+        }
+
+        m_thread = thread([this, handle, identity]()
+        {
+            xmpp_host_t host;
+            xmpp_host_init(&host, JABBERDAEMON_TEST_HOST, JABBERDAEMON_TEST_PORT,
+                           JABBERDAEMON_TEST_DOMAIN, XMPP_PROTOCOL_XMPP);
+
+            xmpp_proxy_t proxy;
+            xmpp_proxy_init(&proxy, TEST_PROXY_HOST, TEST_PROXY_PORT, XMPP_PROXY_SOCKS5);
+
+            xmpp_connection_callback_t callback = {};
+            callback.on_connected = &SimpleConnection::connected;
+            callback.on_disconnected = &SimpleConnection::disconnected;
+            callback.param = this;
+
+            EXPECT_EQ(xmpp_connect_with_proxy(handle, &host, &identity, &proxy, callback),
+                      XMPP_ERR_OK);
+
+            xmpp_proxy_destroy(&proxy);
+            xmpp_host_destroy(&host);
+
+            while (!m_shutdown)
+            {
+                // If test run-time is an issue, move this to a condition-variable with
+                // a timed wake.
+                this_thread::sleep_for(chrono::milliseconds(250));
+                if (m_messageContext.abstract_context)
+                {
+                    for (const auto &recipient : m_targets)
+                    {
+                        static int s_index = 0;
+                        string testMessage = "SIMPLE TEST MESSAGE" + to_string(s_index++);
+                        cout << "SENDING MESSAGE (" << m_instance << "): " << testMessage << endl;
+                        xmpp_send_message(m_messageContext, recipient.c_str(),
+                                          testMessage.c_str(), testMessage.size(),
+                                          XMPP_MESSAGE_TRANSMIT_DEFAULT);
+                    }
+                }
+            }
+
+            if (m_messageContext.abstract_context)
+            {
+                xmpp_message_context_destroy(m_messageContext);
+            }
+
+            if (m_connection.abstract_connection)
+            {
+                xmpp_close(m_connection);
+            }
+
+        });
+    }
+
+    ~SimpleConnection()
+    {
+        m_shutdown = true;
+        if (m_thread.joinable())
+        {
+            m_thread.join();
+        }
+    }
+
+    static void connected(void *const param, xmpp_error_code_t result,
+                          xmpp_connection_handle_t connection)
+    {
+        try
+        {
+            EXPECT_NE(param, nullptr);
+            if (param)
+            {
+                auto self = reinterpret_cast<SimpleConnection *>(param);
+
+                EXPECT_EQ(result, XMPP_ERR_OK);
+                if (result == XMPP_ERR_OK)
+                {
+                    xmpp_message_callback_t callback{};
+                    callback.on_received = &SimpleConnection::onReceived;
+                    callback.on_sent = &SimpleConnection::onSent;
+                    callback.param = param;
+                    self->m_messageContext = xmpp_message_context_create(connection, callback);
+
+                    // Trigger the test thread to send/receive messages on the next wake.
+                    self->m_connection = connection;
+
+                    EXPECT_NE(self->m_messageContext.abstract_context, nullptr);
+                }
+            }
+        }
+        catch (...)
+        {
+            // Can't rethrow. This is a C callback context.
+        }
+    }
+
+    static void disconnected(void *const param, xmpp_error_code_t result,
+                             xmpp_connection_handle_t connection)
+    {
+        EXPECT_NE(param, nullptr);
+    }
+
+    static void onReceived(void *const param, xmpp_error_code_t result,
+                           const void *const toRecipient,
+                           const void *const msg, size_t messageOctets)
+    {
+        EXPECT_NE(param, nullptr);
+        EXPECT_EQ(result, XMPP_ERR_OK);
+        if (result == XMPP_ERR_OK)
+        {
+            EXPECT_NE(toRecipient, nullptr);
+            EXPECT_NE(msg, nullptr);
+            // Strictly speaking, messageOctets may be 0 for a zero-length message, but
+            // we are not testing 0-length messages here at the moment.
+            EXPECT_GT(messageOctets, 0);
+
+            if (param && msg)
+            {
+                auto self = reinterpret_cast<SimpleConnection *>(param);
+                string messageStr((const char *const)msg, messageOctets);
+                self->m_messageQueue.push_back(messageStr);
+            }
+        }
+    }
+
+    static void onSent(void *const param, xmpp_error_code_t result,
+                       const void *const fromSender,
+                       const void *const msg, size_t messageOctets)
+    {
+        EXPECT_NE(param, nullptr);
+        EXPECT_EQ(result, XMPP_ERR_OK);
+        if (result == XMPP_ERR_OK)
+        {
+            EXPECT_NE(fromSender, nullptr);
+            EXPECT_NE(msg, nullptr);
+            if (param)
+            {
+                auto self = reinterpret_cast<SimpleConnection *>(param);
+                ++self->m_onSentCalls;
+            }
+        }
+    }
+
+
+    const list<string> &messageQueue() const { return m_messageQueue; }
+    const size_t sentCalls() const { return m_onSentCalls; }
+
+    string m_instance;
+    xmpp_identity_t m_identity;
+    thread m_thread{};
+    bool m_shutdown{false};
+    list<string> m_targets{};
+    list<string> m_messageQueue{};
+    xmpp_connection_handle_t m_connection{};
+    xmpp_message_context_t m_messageContext{};
+    size_t m_onSentCalls{0};
+};
+
+
+
+TEST(ra_xmpp, message_send_receive_test)
+{
+    // Initiate parallel connections with different users.
+    xmpp_context_t context;
+    xmpp_context_init(&context);
+
+    xmpp_handle_t handle = xmpp_startup(&context);
+
+    string userName1;
+    string password1;
+    constructTestUserAuth(TEST_SESSION_GUID, TEST_APP_GUID, userName1, password1);
+    string userJID1 = userName1 + "@" + string(JABBERDAEMON_TEST_DOMAIN);
+
+    xmpp_identity_t identity1;
+    xmpp_identity_init(&identity1, userName1.c_str(), password1.c_str(), userJID1.c_str(),
+                       XMPP_TRY_IN_BAND_REGISTER);
+
+
+    string userName2;
+    string password2;
+    constructTestUserAuth(TEST_SESSION2_GUID, TEST_APP_GUID, userName2, password2);
+    string userJID2 = userName2 + "@" + string(JABBERDAEMON_TEST_DOMAIN);
+
+    xmpp_identity_t identity2;
+    xmpp_identity_init(&identity2, userName2.c_str(), password2.c_str(), userJID2.c_str(),
+                       XMPP_TRY_IN_BAND_REGISTER);
+
+    list<xmpp_identity_t> connect1Targets, connect2Targets;
+
+    connect1Targets.push_back(identity2);
+    connect2Targets.push_back(identity1);
+
+    {
+        // Start a thread to run each connection. This is itended to simulate two entities
+        // connecting to the server independently, but is not precisely the same.
+        SimpleConnection connection1("C1", handle, identity1, connect1Targets);
+        SimpleConnection connection2("C2", handle, identity2, connect2Targets);
+
+        // Run the send-receive test for approx. 5 seconds.
+        this_thread::sleep_for(chrono::seconds(5));
+
+        EXPECT_GT(connection1.messageQueue().size(), 0);
+        EXPECT_GT(connection1.sentCalls(), 0);
+
+        for (const auto &s : connection1.messageQueue())
+        {
+            cout << "CONN1 RECV: " << s << endl;
+        }
+
+
+        EXPECT_GT(connection2.messageQueue().size(), 0);
+        EXPECT_GT(connection2.sentCalls(), 0);
+
+        for (const auto &s : connection2.messageQueue())
+        {
+            cout << "CONN2 RECV: " << s << endl;
+        }
+    }
+
+    xmpp_identity_destroy(&identity2);
+    xmpp_identity_destroy(&identity1);
+
+    xmpp_shutdown_xmpp(handle);
+    xmpp_context_destroy(&context);
+
+    EXPECT_TRUE(xmpp_global_shutdown_okay() == 1);
+
 }

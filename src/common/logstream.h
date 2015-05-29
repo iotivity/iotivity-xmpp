@@ -250,12 +250,12 @@ namespace Iotivity
     /// @endcond
 
     /// @def dout
-    /// Macro to access the default static logstream instance. This provide file and
+    /// Macro to access the default static logstream instance. This provides file and
     /// line-number output if the that feature is enabled.
 #define dout dout_fl_helper(__FILE__, __LINE__)()
 #else
     /// @def dout
-    /// Macro to access the default static logstream instance. This provide file and
+    /// Macro to access the default static logstream instance. This provides file and
     /// line-number output if the that feature is enabled.
 #define dout logstream_out_object
 #endif
