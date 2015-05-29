@@ -60,6 +60,7 @@
 
 using namespace std;
 using namespace Iotivity;
+using namespace Iotivity::XML;
 
 
 struct static_init_test
@@ -135,68 +136,103 @@ struct ContextWrapper
                 config.setExtensionConfig(InBandRegistration::extensionName(), registrationParams);
             }
 #endif
-
-            m_client = XmppClient::create();
-
-            auto createdFunc =
-                [handle, callback](XmppStreamCreatedEvent & e)
             {
-                if (e.result().succeeded())
+                lock_guard<recursive_mutex> lock(mutex());
+                s_connectionParams[xmlConnection] = {handle, callback};
+            }
+            {
+                lock_guard<recursive_mutex> lock(m_mutex);
+                if (!m_client)
                 {
-                    const void *streamHandle = e.stream().get();
-                    {
-                        lock_guard<recursive_mutex> lock(mutex());
-                        s_streamsByHandle[streamHandle] = e.stream();
-                    }
+                    m_client = XmppClient::create();
 
-                    auto streamConnectedFunc =
-                        [streamHandle, callback](XmppConnectedEvent & e)
+                    auto createdFunc =
+                        [](XmppStreamCreatedEvent & e)
                     {
-                        if (callback.on_connected)
+                        ConnectionParams params{};
                         {
-                            xmpp_connection_handle_t connectionHandle = {streamHandle};
-                            callback.on_connected(callback.param, translateError(e.result()),
-                                                  connectionHandle);
+                            lock_guard<recursive_mutex> lock(mutex());
+                            auto f = s_connectionParams.find(e.remoteServer());
+                            if (f == s_connectionParams.end())
+                            {
+                                return;
+                            }
+                            params = f->second;
                         }
-                    };
-                    using StreamConnectedFunc = NotifySyncFunc<XmppConnectedEvent,
-                          decltype(streamConnectedFunc)>;
-                    e.stream()->onConnected() += make_shared<StreamConnectedFunc>(
-                                                     streamConnectedFunc);
 
-                    auto streamClosedFunc =
-                        [streamHandle, callback](XmppClosedEvent & e)
-                    {
-                        if (callback.on_disconnected)
+                        auto stream = e.stream();
+                        if (e.result().succeeded() && stream)
                         {
-                            xmpp_connection_handle_t connectionHandle = {streamHandle};
-                            callback.on_disconnected(callback.param,
-                                                     translateError(e.result()),
-                                                     connectionHandle);
+                            const void *streamHandle = stream.get();
+                            {
+                                lock_guard<recursive_mutex> lock(mutex());
+                                s_streamsByHandle[streamHandle] = stream;
+                            }
+
+                            auto callback = params.m_callback;
+                            auto streamConnectedFunc =
+                                [stream, streamHandle, callback](XmppConnectedEvent & e)
+                            {
+                                // Send first presence message
+                                postPresence(stream);
+
+                                if (callback.on_connected)
+                                {
+                                    xmpp_connection_handle_t connectionHandle = {streamHandle};
+                                    callback.on_connected(callback.param,
+                                                          translateError(e.result()),
+                                                          connectionHandle);
+                                }
+                            };
+                            using StreamConnectedFunc = NotifySyncFunc<XmppConnectedEvent,
+                                  decltype(streamConnectedFunc)>;
+                            stream->onConnected() += make_shared<StreamConnectedFunc>(
+                                                         streamConnectedFunc);
+
+                            auto streamClosedFunc =
+                                [streamHandle, callback](XmppClosedEvent & e)
+                            {
+                                if (callback.on_disconnected)
+                                {
+                                    xmpp_connection_handle_t connectionHandle = {streamHandle};
+                                    callback.on_disconnected(callback.param,
+                                                             translateError(e.result()),
+                                                             connectionHandle);
+                                }
+
+                                {
+                                    lock_guard<recursive_mutex> lock(mutex());
+                                    s_streamsByHandle.erase(streamHandle);
+                                }
+                            };
+                            using StreamClosedFunc = NotifySyncFunc<XmppClosedEvent,
+                                  decltype(streamClosedFunc)>;
+                            stream->onClosed() += make_shared<StreamClosedFunc>(streamClosedFunc);
                         }
+                        else
+                        {
+                            xmpp_error_code_t errorCode = translateError(e.result());
+                            if (params.m_callback.on_connected && isValidWrapper(params.m_handle))
+                            {
+                                xmpp_connection_handle_t connectionHandle = {params.m_handle};
+                                params.m_callback.on_connected(params.m_callback.param, errorCode,
+                                                               connectionHandle);
+                            }
+                        }
+
 
                         {
                             lock_guard<recursive_mutex> lock(mutex());
-                            s_streamsByHandle.erase(streamHandle);
+                            s_connectionParams.erase(e.remoteServer());
                         }
-                    };
-                    using StreamClosedFunc = NotifySyncFunc<XmppClosedEvent,
-                          decltype(streamClosedFunc)>;
-                    e.stream()->onClosed() += make_shared<StreamClosedFunc>(streamClosedFunc);
-                }
-                else
-                {
-                    xmpp_error_code_t errorCode = translateError(e.result());
-                    if (callback.on_connected && isValidWrapper(handle))
-                    {
-                        xmpp_connection_handle_t connectionHandle = {handle};
-                        callback.on_connected(callback.param, errorCode, connectionHandle);
-                    }
-                }
-            };
 
-            using StreamCreatedFunc = NotifySyncFunc<XmppStreamCreatedEvent, decltype(createdFunc)>;
-            m_client->onStreamCreated() += make_shared<StreamCreatedFunc>(createdFunc);
+                    };
+
+                    using StreamCreatedFunc = NotifySyncFunc<XmppStreamCreatedEvent,
+                          decltype(createdFunc)>;
+                    m_client->onStreamCreated() += make_shared<StreamCreatedFunc>(createdFunc);
+                }
+            }
 
             m_client->initiateXMPP(config, xmlConnection);
         }
@@ -326,11 +362,52 @@ struct ContextWrapper
             //       on the same connection, the caller has the option of setting them up.
             auto messageCallback = make_shared<MessageHandler>(stream, callback);
 
+
+            auto streamMessageFunc =
+                [callback](XmppMessageEvent & e)
+            {
+                if (callback.on_received)
+                {
+                    xmpp_error_code_t errorCode = translateError(e.result());
+
+                    string sender;
+                    ByteBuffer messageBuffer;
+                    if (e.message() && e.message()->name() == "message")
+                    {
+                        e.message()->getAttribute("from", sender);
+
+                        // TODO: Sender is ourselves. Handle error code properly.
+
+                        errorCode = XMPP_ERR_INVALID_MESSAGE_FORMAT;
+                        for (const auto &child : e.message()->elements())
+                        {
+                            if (child->name() == "body")
+                            {
+                                string val = child->value();
+                                ByteBuffer encodedBuffer(val.c_str(), val.size());
+                                if (ByteBuffer::base64Decode(encodedBuffer, messageBuffer))
+                                {
+                                    errorCode = XMPP_ERR_OK;
+                                    break;
+                                }
+                            }
+                        }
+
+                        callback.on_received(callback.param, errorCode,
+                                             sender.size() > 0 ? sender.c_str() : nullptr,
+                                             messageBuffer, messageBuffer.size());
+                    }
+                }
+            };
+            using StreamMessageFunc = NotifySyncFunc<XmppMessageEvent,
+                  decltype(streamMessageFunc)>;
+            stream->onMessage() += make_shared<StreamMessageFunc>(streamMessageFunc);
+
+
             {
                 lock_guard<recursive_mutex> lock(mutex());
                 s_messageHandlers[messageCallback.get()] = messageCallback;
             }
-            return messageCallback.get();
             return messageCallback.get();
         }
 
@@ -342,6 +419,7 @@ struct ContextWrapper
 
         static xmpp_error_code_t sendMessage(void *handle, const std::string &recipient,
                                              const ByteBuffer &tempBuffer,
+                                             const void *const originalMessagePtr,
                                              xmpp_transmission_options_t options)
         {
             shared_ptr<MessageHandler> handler;
@@ -354,7 +432,7 @@ struct ContextWrapper
                 }
             }
 
-            // TODO: Move to IBB implementation.
+            // TODO: Move to IBB implementation?
             if (!handler)
             {
                 return XMPP_ERR_INVALID_HANDLE;
@@ -366,11 +444,53 @@ struct ContextWrapper
                 return XMPP_ERR_STREAM_ALREADY_CLOSED;
             }
 
+            auto doc = XMLDocument::createEmptyDocument();
+            auto message = doc->createElement("message");
+            message->setAttribute("type", "chat");
+            message->setAttribute("id", stream->getNextID());
+            message->setAttribute("to", recipient);
 
+            auto active = doc->createElement("active");
+            active->setAttribute("xmlns", "http://jabber.org/protocol/chatstates");
 
-            // TODO: Send message.
-            //       Call on_send if registered.
+            auto body = doc->createElement("body");
+            ByteBuffer encodedBuffer;
+            if (ByteBuffer::base64Encode(tempBuffer, encodedBuffer))
+            {
+                body->setValue(string((const char *)&encodedBuffer[0], encodedBuffer.size()));
+            }
+            message->appendChild(active);
+            message->appendChild(body);
+            doc->appendChild(message);
 
+            try
+            {
+                stream->sendMessage(move(message));
+                if (handler->m_callback.on_sent)
+                {
+                    handler->m_callback.on_sent(handler->m_callback.param, XMPP_ERR_OK,
+                                                recipient.c_str(), originalMessagePtr,
+                                                tempBuffer.size());
+                }
+                return XMPP_ERR_OK;
+            }
+            catch (const connect_error &ce)
+            {
+                xmpp_error_code_t errorCode = translateError(ce);
+                if (handler->m_callback.on_sent)
+                {
+                    handler->m_callback.on_sent(handler->m_callback.param, errorCode, nullptr,
+                                                nullptr, 0);
+                }
+                return errorCode;
+            }
+            catch (...)
+            {}
+            if (handler->m_callback.on_sent)
+            {
+                handler->m_callback.on_sent(handler->m_callback.param, XMPP_ERR_FAIL, nullptr,
+                                            nullptr, 0);
+            }
 
             return XMPP_ERR_FAIL;
         }
@@ -400,7 +520,26 @@ struct ContextWrapper
             return s_mutex;
         }
 
+        static void postPresence(shared_ptr<IXmppStream> stream)
+        {
+            auto doc = XMLDocument::createEmptyDocument();
+            auto presence = doc->createElement("presence");
+
+            auto show = doc->createElement("show");
+            show->setValue("chat");
+
+            auto priority = doc->createElement("priority");
+            priority->setValue("1");
+
+            presence->appendChild(show);
+            presence->appendChild(priority);
+            doc->appendChild(presence);
+
+            stream->sendMessage(move(presence));
+        }
+
     private:
+        recursive_mutex m_mutex{};
         shared_ptr<XmppClient> m_client{};
 
         static set<const void *> s_wrappers;
@@ -417,12 +556,20 @@ struct ContextWrapper
         };
         using MessageHandlerMap = map<const void *, shared_ptr<MessageHandler>>;
         static MessageHandlerMap s_messageHandlers;
+        struct ConnectionParams
+        {
+            void *m_handle;
+            xmpp_connection_callback_t m_callback;
+        };
+        using ConnectParamMap = map<shared_ptr<IXmppConnection>, ConnectionParams>;
+        static ConnectParamMap s_connectionParams;
 
 };
 
 set<const void *> ContextWrapper::s_wrappers;
 ContextWrapper::StreamHandleMap ContextWrapper::s_streamsByHandle;
 ContextWrapper::MessageHandlerMap ContextWrapper::s_messageHandlers;
+ContextWrapper::ConnectParamMap ContextWrapper::s_connectionParams;
 
 
 extern "C"
@@ -635,7 +782,7 @@ extern "C"
             // on the lifespan of the buffer at the next layer up.
             ByteBuffer tempBuffer(message, sizeInOctets);
 
-            return ContextWrapper::sendMessage(handle, recipientStr, tempBuffer, options);
+            return ContextWrapper::sendMessage(handle, recipientStr, tempBuffer, message, options);
         }
         catch (const connect_error &ce)
         {

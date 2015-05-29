@@ -329,8 +329,8 @@ void xmpp_shutdown_xmpp(xmpp_handle_t handle)
         {
             // TODO: Log issue, inits did not match destroys.
 
-            // PANIC  [ TODO: Lower panic-level ]
-            exit(2);
+            // PANIC
+            //exit(2);
         }
     }
 }

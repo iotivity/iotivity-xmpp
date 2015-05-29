@@ -89,6 +89,7 @@ namespace Iotivity
 
         struct XmppConnectedEvent;
         struct XmppClosedEvent;
+        struct XmppMessageEvent;
 
         /// @brief XMPP Stream interface. Provides a stream of XML stanzas that can be used
         ///        to communication requests and messages to/from an XMPP server.
@@ -111,6 +112,8 @@ namespace Iotivity
                 virtual void sendQuery(XML::XMLElement::Ptr query, QueryResponse callback) = 0;
                 virtual void haltQuery(const std::string &ID) = 0;
                 virtual void sendMessage(XML::XMLElement::Ptr message) = 0;
+
+                virtual SyncEvent<XmppMessageEvent> &onMessage() = 0;
 
                 virtual std::shared_ptr<IXmppStreamTest> getTestInterface()
                 { return std::shared_ptr<IXmppStreamTest>(); }
