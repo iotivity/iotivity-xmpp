@@ -694,35 +694,38 @@ namespace Iotivity
                 dout << "SYNC SEND:" << (int)p_->mode() << " BYTES: " << buf.size() << endl;
             )
 
-            promise<void> sentPromise;
-            future<void> sentFuture = sentPromise.get_future();
-
-            p_->m_sslStrand.dispatch([this, &buf, &sentFuture, &sentPromise]()
+            if (!p_->m_sslStrand.get_io_service().stopped())
             {
-                promise<void> localSentPromise = move(sentPromise);
+                promise<void> sentPromise;
+                future<void> sentFuture = sentPromise.get_future();
 
-                asio::error_code ec;
-                size_t bytesSent = 0;
-                switch (p_->mode())
+                p_->m_sslStrand.dispatch([this, &buf, &sentFuture, &sentPromise]()
                 {
-                    case TcpConnectionImpl::TLSMode::PreNegotiation:
-                        bytesSent = p_->m_socket.send(buffer((const void *)buf, buf.size()), 0, ec);
-                        break;
-                    case TcpConnectionImpl::TLSMode::Negotiated:
-                        bytesSent = asio::write(p_->m_sslSocket, buffer((const void *)buf, buf.size()),
-                                                ec);
-                        break;
-                    default:
-                        break;
-                }
-                bytesSent = bytesSent;
-                if (ec)
-                {
-                    throw connect_error(ec);
-                }
-                localSentPromise.set_value();
-            });
-            sentFuture.get();
+                    promise<void> localSentPromise = move(sentPromise);
+
+                    asio::error_code ec;
+                    size_t bytesSent = 0;
+                    switch (p_->mode())
+                    {
+                        case TcpConnectionImpl::TLSMode::PreNegotiation:
+                            bytesSent = p_->m_socket.send(buffer((const void *)buf, buf.size()), 0, ec);
+                            break;
+                        case TcpConnectionImpl::TLSMode::Negotiated:
+                            bytesSent = asio::write(p_->m_sslSocket, buffer((const void *)buf, buf.size()),
+                                                    ec);
+                            break;
+                        default:
+                            break;
+                    }
+                    bytesSent = bytesSent;
+                    if (ec)
+                    {
+                        throw connect_error(ec);
+                    }
+                    localSentPromise.set_value();
+                });
+                sentFuture.get();
+            }
 
             WITH_LOG_ENTRYEXIT
             (
@@ -738,32 +741,35 @@ namespace Iotivity
             )
 
             size_t bytesReceived = 0;
-            promise<void> receivedPromise;
-            future<void> receivedFuture = receivedPromise.get_future();
-
-            p_->m_sslStrand.dispatch([this, &buf, &ec, &bytesReceived, &receivedPromise]()
+            if (!p_->m_sslStrand.get_io_service().stopped())
             {
-                promise<void> localReceivedPromise = move(receivedPromise);
-                switch (p_->mode())
-                {
-                    case TcpConnectionImpl::TLSMode::PreNegotiation:
-                        bytesReceived = p_->m_socket.receive(buffer((void *)buf, buf.size()), 0, ec);
-                        break;
-                    case TcpConnectionImpl::TLSMode::Negotiated:
-                        bytesReceived = p_->m_sslSocket.read_some(buffer((void *)buf, buf.size()), ec);
-                        break;
-                    default:
-                        break;
-                }
+                promise<void> receivedPromise;
+                future<void> receivedFuture = receivedPromise.get_future();
 
-                if (ec == asio::error::operation_aborted)
+                p_->m_sslStrand.dispatch([this, &buf, &ec, &bytesReceived, &receivedPromise]()
                 {
-                    p_->m_sslSocket.shutdown();
-                }
-                localReceivedPromise.set_value();
-            });
+                    promise<void> localReceivedPromise = move(receivedPromise);
+                    switch (p_->mode())
+                    {
+                        case TcpConnectionImpl::TLSMode::PreNegotiation:
+                            bytesReceived = p_->m_socket.receive(buffer((void *)buf, buf.size()), 0, ec);
+                            break;
+                        case TcpConnectionImpl::TLSMode::Negotiated:
+                            bytesReceived = p_->m_sslSocket.read_some(buffer((void *)buf, buf.size()), ec);
+                            break;
+                        default:
+                            break;
+                    }
 
-            receivedFuture.get();
+                    if (ec == asio::error::operation_aborted)
+                    {
+                        p_->m_sslSocket.shutdown();
+                    }
+                    localReceivedPromise.set_value();
+                });
+
+                receivedFuture.get();
+            }
             WITH_LOG_ENTRYEXIT
             (
                 dout << "SYNC RECEIVE END" << endl;
@@ -789,55 +795,62 @@ namespace Iotivity
             }
             if (tempBuffer)
             {
-                p_->m_sslStrand.dispatch([this, callback, tempBuffer]()
+                if (!p_->m_sslStrand.get_io_service().stopped())
                 {
-                    switch (p_->mode())
+                    p_->m_sslStrand.dispatch([this, callback, tempBuffer]()
                     {
-                        case TcpConnectionImpl::TLSMode::PreNegotiation:
-                            if (p_->m_inPreNegotationRead == 0)
-                            {
-                                ++p_->m_inPreNegotationRead;
-                                p_->m_socket.async_read_some(buffer((void *)*tempBuffer, tempBuffer->size()),
-                                                             [this, callback, tempBuffer](const asio::error_code & ec, size_t bytes)
+                        switch (p_->mode())
+                        {
+                            case TcpConnectionImpl::TLSMode::PreNegotiation:
+                                if (p_->m_inPreNegotationRead == 0)
                                 {
-                                    --p_->m_inPreNegotationRead;
-                                    WITH_LOG_ENTRYEXIT
-                                    (
-                                        dout << "ASYNC BYTES READ: " << bytes << endl;
-                                    )
-
-                                    if (callback) callback(connect_error(ec), bytes);
-                                });
-                            }
-                            break;
-                        case TcpConnectionImpl::TLSMode::Negotiated:
-                            if (p_->m_sslSocket.next_layer().is_open())
-                            {
-                                p_->m_sslSocket.async_read_some(buffer((void *)*tempBuffer, tempBuffer->size()),
-                                                                [this, callback, tempBuffer](const asio::error_code & ec, size_t bytes)
-                                {
-                                    WITH_LOG_ENTRYEXIT
-                                    (
-                                        dout << "ASYNC NEGOTIATED BYTES READ: " << bytes << endl;
-                                    )
-
-                                    asio::error_code code = ec;
-                                    if (code == asio::error::operation_aborted)
+                                    ++p_->m_inPreNegotationRead;
+                                    p_->m_socket.async_read_some(buffer((void *)*tempBuffer, tempBuffer->size()),
+                                                                 [this, callback, tempBuffer](const asio::error_code & ec, size_t bytes)
                                     {
-                                        p_->m_sslSocket.shutdown(code);
-                                    }
-                                    if (callback) callback(connect_error(code), bytes);
-                                });
-                            }
-                            else
-                            {
-                                if (callback) callback(connect_error::ecSocketClosed, 0);
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                });
+                                        --p_->m_inPreNegotationRead;
+                                        WITH_LOG_ENTRYEXIT
+                                        (
+                                            dout << "ASYNC BYTES READ: " << bytes << endl;
+                                        )
+
+                                        if (callback) callback(connect_error(ec), bytes);
+                                    });
+                                }
+                                break;
+                            case TcpConnectionImpl::TLSMode::Negotiated:
+                                if (p_->m_sslSocket.next_layer().is_open())
+                                {
+                                    p_->m_sslSocket.async_read_some(buffer((void *)*tempBuffer, tempBuffer->size()),
+                                                                    [this, callback, tempBuffer](const asio::error_code & ec, size_t bytes)
+                                    {
+                                        WITH_LOG_ENTRYEXIT
+                                        (
+                                            dout << "ASYNC NEGOTIATED BYTES READ: " << bytes << endl;
+                                        )
+
+                                        asio::error_code code = ec;
+                                        if (code == asio::error::operation_aborted)
+                                        {
+                                            p_->m_sslSocket.shutdown(code);
+                                        }
+                                        if (callback) callback(connect_error(code), bytes);
+                                    });
+                                }
+                                else
+                                {
+                                    if (callback) callback(connect_error::ecSocketClosed, 0);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    });
+                }
+                else
+                {
+                    if (callback) callback(connect_error::ecSocketClosed, 0);
+                }
             }
             else
             {
@@ -858,36 +871,43 @@ namespace Iotivity
 
             if (tempBuffer)
             {
-                p_->m_sslStrand.dispatch([this, callback, tempBuffer]()
+                if (!p_->m_sslStrand.get_io_service().stopped())
                 {
-                    switch (p_->mode())
+                    p_->m_sslStrand.dispatch([this, callback, tempBuffer]()
                     {
-                        case TcpConnectionImpl::TLSMode::PreNegotiation:
-                            p_->m_socket.async_send(buffer((void *)*tempBuffer, tempBuffer->size()),
-                                                    [callback, tempBuffer](const asio::error_code & ec, size_t bytes)
-                            {
-                                WITH_LOG_ENTRYEXIT
-                                (
-                                    dout << "ASYNC BYTES Sent: " << bytes << endl;
-                                )
+                        switch (p_->mode())
+                        {
+                            case TcpConnectionImpl::TLSMode::PreNegotiation:
+                                p_->m_socket.async_send(buffer((void *)*tempBuffer, tempBuffer->size()),
+                                                        [callback, tempBuffer](const asio::error_code & ec, size_t bytes)
+                                {
+                                    WITH_LOG_ENTRYEXIT
+                                    (
+                                        dout << "ASYNC BYTES Sent: " << bytes << endl;
+                                    )
 
-                                if (callback) callback(connect_error(ec), bytes);
-                            });
-                            break;
-                        case TcpConnectionImpl::TLSMode::Negotiated:
-                            if (p_->m_sslSocket.next_layer().is_open())
-                            {
-                                ssl_write_all(p_->m_sslSocket, tempBuffer, callback);
-                            }
-                            else
-                            {
-                                if (callback) callback(connect_error::ecSocketClosed, 0);
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                });
+                                    if (callback) callback(connect_error(ec), bytes);
+                                });
+                                break;
+                            case TcpConnectionImpl::TLSMode::Negotiated:
+                                if (p_->m_sslSocket.next_layer().is_open())
+                                {
+                                    ssl_write_all(p_->m_sslSocket, tempBuffer, callback);
+                                }
+                                else
+                                {
+                                    if (callback) callback(connect_error::ecSocketClosed, 0);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    });
+                }
+                else
+                {
+                    if (callback) callback(connect_error::ecSocketClosed, 0);
+                }
             }
             else
             {

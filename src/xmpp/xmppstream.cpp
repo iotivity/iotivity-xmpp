@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include "xmppstream.h"
+#include "xmppevents.h"
 
 #include "../connect/connecterror.h"
 #include "../common/rand_helper.h"
@@ -39,7 +40,8 @@ namespace Iotivity
     namespace Xmpp
     {
         XmppStreamBase::XmppStreamBase():
-            m_mutex(), m_rollingCounter(0), m_queries(), m_connected(m_mutex), m_closed(m_mutex)
+            m_mutex(), m_rollingCounter(0), m_queries(), m_connected(m_mutex), m_closed(m_mutex),
+            m_onMessage(m_mutex)
         {
             mt19937 &rand = rand_helper::rng();
             uniform_int_distribution<uint32_t> rngSelector(0, numeric_limits<uint32_t>::max());
@@ -138,7 +140,14 @@ namespace Iotivity
                         }
                     }
 
-                    if (callback) callback(connect_error::SUCCESS, move(message));
+                    if (callback)
+                    {
+                        callback(connect_error::SUCCESS, move(message));
+                    }
+                    else
+                    {
+                        onMessage().fire(XmppMessageEvent(connect_error::SUCCESS, move(message)));
+                    }
                 }
                 else
                 {

@@ -42,6 +42,8 @@
 // TOOD: Move interface when refactoring for BOSH 'streams'
 #include "../connect/tcpclient.h"
 
+#include <iostream>
+
 
 
 /// @addtogroup XMPP
@@ -499,6 +501,10 @@ namespace Iotivity
             {
                 XMLElement::Ptr element = payload->documentElement();
 
+                if (!element)
+                {
+                    throw connect_error(connect_error::ecInvalidMessage);
+                }
                 string &&payloadStr = element->name() == "stream:stream" ?
                                       payload->unterminatedXml() :
                                       payload->xml();
@@ -976,6 +982,8 @@ namespace Iotivity
                                         doc->appendChild(message);
                                         sendMessage(move(message));
 
+                                        cout << "FIRE CONNECTED: " << onConnected().notifierCount()
+                                             << endl;
                                         onConnected().fire(XmppConnectedEvent(
                                                                connect_error::SUCCESS));
                                         m_boundPromise.set_value(m_boundJabberId);
@@ -1539,7 +1547,7 @@ namespace Iotivity
             bool m_shutdown;
             set<shared_ptr<IXmppStream>> m_streams;
             XmppClientRunner m_runner;
-            OneShotSyncEvent<XmppStreamCreatedEvent> m_streamCreated;
+            SyncEvent<XmppStreamCreatedEvent> m_streamCreated;
         };
         /// @endcond
 
@@ -1589,7 +1597,9 @@ namespace Iotivity
 
                             stream = make_shared<XmppStream>(config, remoteServer);
 
+                            cout << "STREAMCREATED INITIAL FIRE: " << onStreamCreated().notifierCount() << endl;
                             onStreamCreated().fire(XmppStreamCreatedEvent(stream, remoteServer));
+                            cout << "STREAMCREATED AFTER FIRE: " << onStreamCreated().notifierCount() << endl;
                             remoteServer->connect();
 
                             {
