@@ -45,12 +45,14 @@ namespace Iotivity
 
                 virtual std::string getNextID() override;
 
-                virtual SyncEvent<XmppConnectedEvent> &onConnected() { return m_connected; }
-                virtual SyncEvent<XmppClosedEvent> &onClosed() { return m_closed; }
+                virtual SyncEvent<XmppConnectedEvent> &onConnected() override { return m_connected; }
+                virtual SyncEvent<XmppClosedEvent> &onClosed() override { return m_closed; }
 
                 virtual void sendQuery(XML::XMLElement::Ptr query, QueryResponse callback) override;
                 virtual void haltQuery(const std::string &ID) override;
                 virtual void sendMessage(XML::XMLElement::Ptr message) override;
+
+                virtual SyncEvent<XmppMessageEvent> &onMessage() override { return m_onMessage; }
 
             protected:
                 virtual void handleMessage(XML::XMLElement::Ptr message);
@@ -74,6 +76,7 @@ namespace Iotivity
 
                 OneShotSyncEvent<XmppConnectedEvent> m_connected;
                 OneShotSyncEvent<XmppClosedEvent> m_closed;
+                SyncEvent<XmppMessageEvent> m_onMessage;
         };
     }
 }

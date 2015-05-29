@@ -260,6 +260,12 @@ namespace Iotivity
 
             }
 
+            size_t notifierCount() const
+            {
+                std::lock_guard<_MutexT> lock(m_mutex);
+                return m_notifiers.size();
+            }
+
             SyncEvent &operator=(const SyncEvent &) = delete;
 
             SyncEvent &operator+=(notifier_type notifier)

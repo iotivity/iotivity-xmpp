@@ -80,5 +80,18 @@ namespace Iotivity
             XmppClosedEvent(const connect_error &errorResult): XmppBasicEvent(errorResult) {}
         };
 
+        struct XmppMessageEvent: public XmppBasicEvent
+        {
+                XmppMessageEvent() = delete;
+                XmppMessageEvent(const connect_error &errorResult, XML::XMLElement::Ptr &&message):
+                    XmppBasicEvent(errorResult), m_message(move(message))
+                {}
+
+                const XML::XMLElement::Ptr &message() const { return m_message; }
+
+            private:
+                XML::XMLElement::Ptr m_message;
+        };
+
     }
 }
