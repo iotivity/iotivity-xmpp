@@ -35,8 +35,10 @@ src_dir= 'gmock-1.7.0/'
 tar_file = 'gmock-1.7.0.zip'
 tar_url = 'https://googlemock.googlecode.com/files/gmock-1.7.0.zip'
 
-if not os.path.exists(src_dir):
+if not os.path.exists(tar_file):
     target_zip = gmock_env.URLDownload(tar_file, tar_url)
+
+if not os.path.exists(src_dir):
     target_dir = gmock_env.UnpackAll(src_dir+'configure', tar_file)
 
 
@@ -52,14 +54,29 @@ else:
     # Run make dependent on whether one of the targets was created (not all). We mark this
     # target precious because it was not created by scons and should not be deleted by it when
     # the next build is run.
-    gmock_env.Precious(gmock_env.Make(target = libs_dir+'libgmock.so', source = make_file))
+    
+    if target_os in ['darwin']:
+        gmock_env.Precious(gmock_env.Make(target = libs_dir+'libgmock.dylib', source = make_file))
+    else:
+        gmock_env.Precious(gmock_env.Make(target = libs_dir+'libgmock.so', source = make_file))
 
-    gmock_env.Depends(src_dir+'gtest/lib/.libs/libgtest.so', libs_dir+'libgmock.so')
-    gmock_env.Depends(src_dir+'gtest/lib/.libs/libgtest.so.0', libs_dir+'libgmock.so')
+    if target_os in ['darwin']:
+        gmock_env.Depends(src_dir+'gtest/lib/.libs/libgtest.dylib', libs_dir+'libgmock.dylib')
+        gmock_env.Depends(src_dir+'gtest/lib/.libs/libgtest.0.dylib', libs_dir+'libgmock.dylib')
+    else:
+        gmock_env.Depends(src_dir+'gtest/lib/.libs/libgtest.so', libs_dir+'libgmock.so')
+        gmock_env.Depends(src_dir+'gtest/lib/.libs/libgtest.so.0', libs_dir+'libgmock.so')
+        
 
     # For running ccfxmpp_tests
-    gmock_env.Install(env['BUILD_DIR'], src_dir+'gtest/lib/.libs/libgtest.so')
-    gmock_env.Install(env['BUILD_DIR'], src_dir+'gtest/lib/.libs/libgtest.so.0')
+    if target_os not in ['darwin']:
+        gmock_env.Install(env['BUILD_DIR'], src_dir+'gtest/lib/.libs/libgtest.so')
+        gmock_env.Install(env['BUILD_DIR'], src_dir+'gtest/lib/.libs/libgtest.so.0')
+    else:
+        gmock_env.Install(env['BUILD_DIR'], src_dir+'gtest/lib/.libs/libgtest.dylib')
+        gmock_env.Install(env['BUILD_DIR'], src_dir+'gtest/lib/.libs/libgtest.0.dylib')
+        gmock_env.Install(env['BUILD_DIR'], src_dir+'lib/.libs/libgmock.dylib')
+        gmock_env.Install(env['BUILD_DIR'], src_dir+'lib/.libs/libgmock.0.dylib')
 
     # Append the path to asio to the original environment
     env.AppendUnique(CPPPATH = [dir_offset_from_current(src_dir+'include/'),

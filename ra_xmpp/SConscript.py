@@ -66,27 +66,32 @@ if target_os not in ['windows', 'winrt']:
             '-fdata-sections',
             '-ffunction-sections',
             '-flto',
+            '-DASIO_STANDALONE',            
             '-Os',
-            '-Wl,--gc-sections',
-            '-Wl,--strip-all',
             '-Wall', 
             '-Werror',
             '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
             '-fPIC',
             ])
+    if target_os not in ['darwin','ios']:
+        ra_xmpp_env.AppendUnique(
+            CXXFLAGS = [
+                '-Wl,--gc-sections',
+                '-Wl,--strip-all',
+                ])
+
     if not env['RELEASE']:
         ra_xmpp_env.AppendUnique(CXXFLAGS = [
             '-g'
             ])
 
 
-ra_xmpp_sh = ra_xmpp_env.SharedLibrary('ra_xmpp', ra_xmpp_src)
 ra_xmpp_st = ra_xmpp_env.StaticLibrary('ra_xmpp', ra_xmpp_src)
-
-#env.Requires(File('ra_xmpp.c'), env['BUILD_DIR']+'libsafec-1.0.so.1')
-
-ra_xmpp_env.Install(env.get('BUILD_DIR'), ra_xmpp_sh)
 ra_xmpp_env.Install(env.get('BUILD_DIR'), ra_xmpp_st)
 
-# The safec dependency is not being picked up automatically; force the issue
+if target_os not in ['darwin','ios']:
+    ra_xmpp_sh = ra_xmpp_env.SharedLibrary('ra_xmpp', ra_xmpp_src)
+    ra_xmpp_env.Install(env.get('BUILD_DIR'), ra_xmpp_sh)
+
+
 

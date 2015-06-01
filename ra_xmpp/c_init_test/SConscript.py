@@ -60,10 +60,19 @@ if target_os not in ['windows', 'winrt']:
             '-Wall', 
             '-Werror',
             '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
-            ],
-        LINKFLAGS = [
+            ])
+    if target_os not in ['darwin','ios']:
+        ra_xmpp_test_env.AppendUnique(
+                LINKFLAGS = [
             '-Wl,--no-as-needed'
             ])
+    else:
+        ra_xmpp_test_env.AppendUnique(
+            LIBS =['c++'],
+            LINKFLAGS = [
+            '-stdlib=libc++'
+            ])
+        
     if not env['RELEASE']:
         ra_xmpp_test_env.AppendUnique(CFLAGS = [
             '-g'
