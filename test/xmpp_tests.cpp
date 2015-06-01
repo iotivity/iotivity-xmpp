@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include <gtest/gtest.h>
+#include <algorithm>
 
 #ifdef ENABLE_LIBSTROPHE
 #include <xmpp/xmppstrophe.h>

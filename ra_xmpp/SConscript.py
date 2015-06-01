@@ -86,6 +86,7 @@ if target_os not in ['windows', 'winrt']:
             ])
 
 
+ra_xmpp_sh = ra_xmpp_env.SharedLibrary('ra_xmpp', ra_xmpp_src)
 ra_xmpp_st = ra_xmpp_env.StaticLibrary('ra_xmpp', ra_xmpp_src)
 ra_xmpp_env.Install(env.get('BUILD_DIR'), ra_xmpp_st)
 
