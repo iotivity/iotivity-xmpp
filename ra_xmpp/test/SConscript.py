@@ -78,6 +78,8 @@ if target_os not in ['windows', 'winrt']:
             ])
 
 
+ra_xmpp_test_env.Requires('libgtest.so', 'ra_xmpp_test')
+
 ra_xmpp_test = ra_xmpp_test_env.Program('ra_xmpp_test', ra_xmpp_test_src)
 
 ra_xmpp_test_env.Install(env.get('BUILD_DIR'), ra_xmpp_test)

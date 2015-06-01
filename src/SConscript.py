@@ -74,7 +74,7 @@ if target_os not in ['windows', 'winrt']:
         '-fPIC',
         ])
     if target_os not in ['darwin','ios']:
-        ra_xmpp_env.AppendUnique(
+        ccfxmpp_lib_env.AppendUnique(
             CXXFLAGS = [
                 '-Wl,--gc-sections',
                 '-Wl,--strip-all',
