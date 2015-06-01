@@ -101,7 +101,7 @@ namespace Iotivity
             RandomBuffer(const RandomBuffer &buffer) = default;
             RandomBuffer(RandomBuffer &&buffer);
 
-            operator const ByteBuffer &() const { return *this; }
+  //          operator const ByteBuffer &() const { return *this; }
 
             using SecureBuffer::size;
             using SecureBuffer::get;

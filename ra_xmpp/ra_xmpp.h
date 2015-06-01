@@ -196,7 +196,7 @@ void XMPP_LIB_(proxy_destroy)(XMPP_LIB_(proxy_t) * proxy);
 
 XMPP_LIB_(handle_t) XMPP_LIB_(startup)(const XMPP_LIB_(context_t) * const context);
 
-void XMPP_LIB_(shutdown)(XMPP_LIB_(handle_t) handle);
+void XMPP_LIB_(shutdown_xmpp)(XMPP_LIB_(handle_t) handle);
 
 // TEST-only function to verify that shutdown will not leak resources.
 int XMPP_LIB_(global_shutdown_okay)(void);

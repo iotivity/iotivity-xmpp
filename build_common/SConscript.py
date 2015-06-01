@@ -201,15 +201,28 @@ if not conf.CheckCXX():
 # Check for openssl
 has_ssl = conf.CheckLib('ssl')
 has_crypto = conf.CheckLib('crypto')
+
+# OPENSSL is deprecated on 10.7 and later so we use a downloaded version
+if target_os in ['darwin']:
+    has_ssl = False
+    has_crypto = False
+
 conf.env['HAS_OPENSSL'] = has_ssl and has_crypto
 
 # Check for curl [BOSH support]
 conf.env['HAS_CURL'] = conf.CheckLib('curl')
 
 ## Check for safec
-#conf.env['HAS_SAFEC'] = 'yes' if conf.CheckLib('safec') else 'no'
+conf.env['HAS_SAFEC'] = 'yes' if conf.CheckLib('safec') else 'no'
 
 env = conf.Finish()
 
 
+#get packages from brew, etc.
+if target_os in ['darwin']:
+   env.AppendUnique( 
+         LIBPATH = [            
+            '/usr/local/lib'
+            ])
+   
 

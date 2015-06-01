@@ -123,7 +123,7 @@ TEST(ra_xmpp, xmpp_startup_shutdown)
     xmpp_handle_t handle = xmpp_startup(&context);
     EXPECT_NE(handle, nullptr);
 
-    xmpp_shutdown(handle);
+    xmpp_shutdown_xmpp(handle);
     xmpp_context_destroy(&context);
 
     EXPECT_TRUE(xmpp_global_shutdown_okay() == 1);

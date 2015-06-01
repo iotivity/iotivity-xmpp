@@ -28,12 +28,10 @@
 #include <string.h>
 #include <errno.h>
 
-#ifdef __APPLE__
-#include <safec/safe_lib.h>
-#elif !defined(_WIN32)
+#if !defined(_WIN32)
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
-#else
+#else    
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 // TODO: ?? Import safec into windows build for memset_s?
@@ -144,8 +142,12 @@ void free_c_str(char *const str)
 void XMPP_LIB_(context_init)(XMPP_LIB_(context_t) * const context)
 {
     if (context)
-    {
+    {    
+#if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
+        memset_s(context, sizeof(*context), 0,sizeof(*context));
+#else
         memset_s(context, sizeof(*context), 0);
+#endif
         context->cb = sizeof(*context);
     }
 }
@@ -171,9 +173,13 @@ void XMPP_LIB_(host_init)(XMPP_LIB_(host_t) * const host, const char *const host
                           uint16_t port, XMPP_LIB_(protocol_t) protocol)
 {
     if (host)
-    {
-        memset_s(host, sizeof(*host), 0);
-        host->cb = sizeof(*host);
+    {    
+#if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
+       memset_s(host, sizeof(*host), 0,sizeof(*host));
+#else
+       memset_s(host, sizeof(*host), 0);
+#endif
+       host->cb = sizeof(*host);
 
         host->host = clone_c_str(host_name);
         host->port = port;
@@ -200,8 +206,12 @@ void XMPP_LIB_(identity_init)(XMPP_LIB_(identity_t) * const identity, const char
                               InBandRegister_t inband_register)
 {
     if (identity)
-    {
+    {    
+#if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
+        memset_s(identity, sizeof(*identity), 0,sizeof(*identity));
+#else
         memset_s(identity, sizeof(*identity), 0);
+#endif
         identity->cb = sizeof(*identity);
 
         identity->user_name = clone_c_str(user_name);
@@ -233,8 +243,14 @@ void XMPP_LIB_(proxy_init)(XMPP_LIB_(proxy_t) * const proxy, const char *const h
                            uint16_t port, XMPP_LIB_(proxy_type_t) proxy_type)
 {
     if (proxy)
-    {
+    {    
+#if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
+        memset_s(proxy, sizeof(*proxy), 0,sizeof(*proxy));
+#else
         memset_s(proxy, sizeof(*proxy), 0);
+#endif
+
+
         proxy->cb = sizeof(*proxy);
 
         proxy->proxy_type = proxy_type;
@@ -287,7 +303,7 @@ XMPP_LIB_(handle_t) XMPP_LIB_(startup)(const XMPP_LIB_(context_t) * const contex
     return (XMPP_LIB_(handle_t))new_context;
 }
 
-void XMPP_LIB_(shutdown)(XMPP_LIB_(handle_t) handle)
+void XMPP_LIB_(shutdown_xmpp)(XMPP_LIB_(handle_t) handle)
 {
     // TODO: Add valid-handle lookup....
     if (handle)

@@ -21,7 +21,7 @@
 Import('env')
 
 # Windows does not require safec, as the functions used are present in its C standard library
-if 'win' not in env['PLATFORM']:
+if env['PLATFORM'] not in ['win']:
     SConscript([
                'safec/SConscript.py',
                ], duplicate = 0)
@@ -35,6 +35,6 @@ SConscript([
            ], duplicate = 0)
 
 
-if env['STROPHE']==1:
+if env['STROPHE']==1 and env['PLATFORM'] not in ['darwin']:
     SConscript(['libstrophe/SConscript.py'])
 

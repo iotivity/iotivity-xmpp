@@ -207,7 +207,7 @@ namespace Iotivity
                 return 0x0020;
             }
 
-            if ((testChar >= 0x0000 && testChar <= 0x001F) ||
+            if ((/*testChar >= 0x0000 &&*/ testChar <= 0x001F) ||
                 (testChar >= 0x0080 && testChar <= 0x009F) ||
                 (testChar >= 0x202A && testChar <= 0x202E) ||
                 (testChar >= 0x2060 && testChar <= 0x2063) ||

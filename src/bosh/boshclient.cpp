@@ -93,7 +93,7 @@ namespace Iotivity
                 BOSHSession(const BOSHConfig &config, shared_ptr<IHttpConnection> httpConnection):
                     m_mutex(), m_httpConnection(httpConnection), m_rid(0), m_config(config),
                     m_serverBOSHVer(), m_sid(), m_serverWait(), m_shortestPollingInterval(),
-                    m_inactivity(), m_requests(0), m_nextClientRid(0), m_lastServerRid(0),
+                    m_inactivity(), m_requests(0), /*m_nextClientRid(0), m_lastServerRid(0),*/
                     m_serverHold(0), m_to(), m_acceptEncodings(), m_ack(0), m_maxPause(),
                     m_charSets(), m_from(), m_activeStream(), m_pendingRequests(),
                     m_queuedRequests(), m_nextInactivityTimeout(), m_nextPollOkay(system_clock::now()),
@@ -474,8 +474,8 @@ namespace Iotivity
                 seconds m_shortestPollingInterval;
                 seconds m_inactivity;
                 uint32_t m_requests;
-                RID m_nextClientRid;
-                RID m_lastServerRid;
+  //              RID m_nextClientRid;
+  //              RID m_lastServerRid;
                 uint32_t m_serverHold;
                 string m_to;
                 string m_acceptEncodings;

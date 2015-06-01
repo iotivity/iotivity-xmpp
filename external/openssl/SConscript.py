@@ -37,20 +37,21 @@ if not env['HAS_OPENSSL'] or env['DOWNLOAD_OPENSSL']:
     ssl_env = env.Clone()
 
     src_dir = ssl_download_version+'/'
-    libs_dir = src_dir+'.libs/'
+    libs_dir = src_dir
+
+    if not os.path.exists(ssl_download_name):
+        ssl_zip = ssl_env.URLDownload(ssl_download_name, 'https://www.openssl.org/source/'+ssl_download_name)
 
     if not os.path.exists(src_dir):
-        ssl_zip = ssl_env.URLDownload(ssl_download_name, 'https://www.openssl.org/source/'+ssl_download_name)
-        ssl_dir = ssl_env.UnpackAll(src_dir+'Configure', ssl_zip)
+        ssl_dir = ssl_env.UnpackAll(src_dir+'Configure', ssl_download_name)
 
 
-    if 'win' in  env['PLATFORM']:
+    if env['PLATFORM'] in ['win','64']:
         pass
-    if '64' in env['TARGET_ARCH']:
-        pass
-    #configure_file = ssl_env.Command(src_dir+'configure', src_dir+'bootstrap.sh', 
+ 
+    #configure_file = ssl_env.Command(src_dir+'configure', src_dir+'bootstrap.sh')
                                          #'bash -c "pushd external/openssl/libssl-master;./bootstrap.sh;popd"')
-    #make_file = ssl_env.Configure(src_dir+'Makefile', configure_file)
+    #make_file = ssl_env.Configure(src_dir+'Makefile', src_dir+'config')
 
     # Run make dependent on whether one of the targets was created (not all). We mark this
     # target precious because it was not created by scons and should not be deleted by it when
@@ -58,11 +59,11 @@ if not env['HAS_OPENSSL'] or env['DOWNLOAD_OPENSSL']:
     #ssl_env.Precious(ssl_env.Make(libs_dir+'libssl.so', make_file))
 
     # Append the path to safec to the original environment
-    env.AppendUnique(CPPPATH = [dir_offset_from_current(src_dir)],
+    env.AppendUnique(CPPPATH = [dir_offset_from_current(src_dir+'/include')],
                      LIBPATH = [dir_offset_from_current(libs_dir)])
 
     #ssl_env.Install(env['BUILD_DIR'], 'libssl.so')
 
-    conf = env.Configure()
-    env = conf.Environment()
+    #conf = env.Configure()
+    #env = conf.Environment()
 

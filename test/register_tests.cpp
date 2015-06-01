@@ -34,13 +34,10 @@
 
 extern "C"
 {
-#ifdef __APPLE__
-#include <TargetConditionals.h>
-#include <safec/safe_lib.h>
-#elif !defined(_WIN32)
+#if !defined(_WIN32)
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
-#endif //APPLE
+#endif
 }
 
 

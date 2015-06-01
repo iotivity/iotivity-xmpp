@@ -203,10 +203,10 @@ namespace Iotivity
                         Methods method = Methods::NoAcceptableMethods;
 
                         array<mutable_buffer, 2> methodBufs =
-                        {
+                        {{
                             buffer(&serverVer, sizeof(serverVer)),
                             buffer(&method, sizeof(method))
-                        };
+                        }};
 
                         localSocket.receive(methodBufs);
 
@@ -258,12 +258,12 @@ namespace Iotivity
                             uint8_t reserved = 0x00;
                             auto addressType = AddressTypes::IPV4;
                             array<mutable_buffer, 4> respBufs =
-                            {
+                            {{
                                 buffer(&serverVer, sizeof(serverVer)),
                                 buffer(&reply, sizeof(reply)),
                                 buffer(&reserved, sizeof(reserved)),
                                 buffer(&addressType, sizeof(addressType))
-                            };
+                            }};
 
                             // Get reply (header)
                             localSocket.receive(respBufs);
@@ -279,13 +279,13 @@ namespace Iotivity
                             {
                                 case AddressTypes::IPV4:
                                     {
-                                        ip::address_v4::bytes_type ipv4Address = {0};
+                                        ip::address_v4::bytes_type ipv4Address = {{0}};
                                         uint16_t port = 0;
                                         array<mutable_buffer, 2> addressBufs =
-                                        {
+                                        {{
                                             buffer(&ipv4Address, sizeof(ipv4Address)),
                                             buffer(&port, sizeof(port))
-                                        };
+                                        }};
 
                                         localSocket.receive(addressBufs);
                                         port = asio::detail::socket_ops::network_to_host_short(port);
@@ -312,10 +312,10 @@ namespace Iotivity
                                         {
                                             domainName = new char[domainNameLength];
                                             array<mutable_buffer, 2> addressBufs =
-                                            {
+                                            {{
                                                 buffer(domainName, domainNameLength),
                                                 buffer(&port, sizeof(port))
-                                            };
+                                            }};
                                             localSocket.receive(addressBufs);
                                             port = asio::detail::socket_ops::network_to_host_short(port);
 
@@ -342,13 +342,13 @@ namespace Iotivity
                                     break;
                                 case AddressTypes::IPV6:
                                     {
-                                        ip::address_v6::bytes_type ipv6Address = {0};
+                                        ip::address_v6::bytes_type ipv6Address = {{0}};
                                         uint16_t port = 0;
                                         array<mutable_buffer, 2> addressBufs =
-                                        {
+                                        {{
                                             buffer(&ipv6Address, sizeof(ipv6Address)),
                                             buffer(&port, sizeof(port))
-                                        };
+                                        }};
 
                                         localSocket.receive(addressBufs);
                                         port = asio::detail::socket_ops::network_to_host_short(port);
@@ -408,10 +408,10 @@ namespace Iotivity
                     uint8_t serverVer = 0;
                     uint8_t upassStatus = 0xFF;
                     array<mutable_buffer, 2> upassResponse =
-                    {
+                    {{
                         buffer(&serverVer, sizeof(serverVer)),
                         buffer(&upassStatus, sizeof(upassStatus))
-                    };
+                    }};
 
                     localSocket.receive(upassResponse);
                     return upassStatus;
@@ -710,7 +710,7 @@ namespace Iotivity
                     default:
                         break;
                 }
-                bytesSent = bytesSent;
+                (void) bytesSent;
                 if (ec)
                 {
                     throw connect_error(ec);

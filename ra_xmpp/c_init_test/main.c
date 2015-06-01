@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     xmpp_handle_t handle = xmpp_startup(&context);
     if (handle)
     {
-        xmpp_shutdown(handle);
+        xmpp_shutdown_xmpp(handle);
         printf("TEST RAN OKAY\n");
     }
     else
