@@ -61,6 +61,8 @@ const uint64_t RID_UPPER_SEGEMENT_LENGTH = 2147483648;
 chrono::milliseconds PRE_WAKE_INTERVAL = milliseconds(0);
 const size_t DEFAULT_MAX_SERVER_WAIT = 60;
 
+//const size_t MAX_QUEUED_RESPONSES = ;
+
 
 const list<string> EMPTY_HEADERS;
 
@@ -96,8 +98,8 @@ namespace Iotivity
                     m_inactivity(), m_requests(0), /*m_nextClientRid(0), m_lastServerRid(0),*/
                     m_serverHold(0), m_to(), m_acceptEncodings(), m_ack(0), m_maxPause(),
                     m_charSets(), m_from(), m_activeStream(), m_pendingRequests(),
-                    m_queuedRequests(), m_nextInactivityTimeout(), m_nextPollOkay(system_clock::now()),
-                    m_outstandingRequests(0), m_keyCache()
+                    m_queuedRequests(), m_queuedResponses(), m_nextInactivityTimeout(),
+                    m_nextPollOkay(system_clock::now()), m_outstandingRequests(0), m_keyCache()
                 {
                     m_rid = generateFirstRID();
                 }
@@ -136,7 +138,7 @@ namespace Iotivity
                     return m_nextInactivityTimeout - PRE_WAKE_INTERVAL;
                 }
 
-                void populateSession(XMLElement::Ptr sessionResponse)
+                void populateSession(const XMLElement::Ptr &sessionResponse)
                 {
                     if (sessionResponse)
                     {
@@ -326,6 +328,28 @@ namespace Iotivity
                     return move(m_queuedRequests);
                 }
 
+                void queueReceivedResponse(XMLElement::Ptr response)
+                {
+                    lock_guard<recursive_mutex> lock(m_mutex);
+                    // TODO: Limit overflow if the reader gets back-logged
+                    //if (m_queuedResponses.size()<MAX_QUEUED_RESPONSES)
+                    //{ (FLOW OFF READ/FLOW OFF WRITE); }
+                    m_queuedResponses.emplace_back(move(response));
+                    // TODO signal received-wake callback
+                }
+
+                XMLElement::Ptr popQueuedResponse()
+                {
+                    lock_guard<recursive_mutex> lock(m_mutex);
+                    if (!m_queuedResponses.empty())
+                    {
+                        XMLElement::Ptr response = move(m_queuedResponses.front());
+                        m_queuedResponses.pop_front();
+                        return response;
+                    }
+                    return XMLElement::Ptr();
+                }
+
                 size_t outstandingRequestCount()
                 {
                     return m_outstandingRequests;
@@ -421,7 +445,7 @@ namespace Iotivity
                             m_keyCache.push_back(hexStr);
 
 
-                            // NOTE: The refernced BOSH standard requires this to be SHA-1. Do not
+                            // NOTE: The referenced BOSH standard requires this to be SHA-1. Do not
                             //       change this unless the BOSH (XEP-0124) standard is updated.
                             SHA1_Init(&ctx);
                             SHA1_Update(&ctx, (const void *)&hexStr[0], hexStr.size());
@@ -474,8 +498,8 @@ namespace Iotivity
                 seconds m_shortestPollingInterval;
                 seconds m_inactivity;
                 uint32_t m_requests;
-  //              RID m_nextClientRid;
-  //              RID m_lastServerRid;
+                //              RID m_nextClientRid;
+                //              RID m_lastServerRid;
                 uint32_t m_serverHold;
                 string m_to;
                 string m_acceptEncodings;
@@ -487,12 +511,12 @@ namespace Iotivity
 
                 map<RID, XMLElement::Ptr> m_pendingRequests;
                 list<XMLElement::Ptr> m_queuedRequests;
+                list<XMLElement::Ptr> m_queuedResponses;
                 system_clock::time_point m_nextInactivityTimeout;
                 system_clock::time_point m_nextPollOkay;
 
                 atomic<size_t> m_outstandingRequests;
 
-                // TODO: Add key feature
                 list<string> m_keyCache;
         };
         /// @endcond
@@ -524,6 +548,19 @@ namespace Iotivity
                     }
                 }
 
+                virtual XMLElement::Ptr receiveResponse() override
+                {
+                    shared_ptr<ConnectionManager> owner = m_owner.lock();
+                    if (owner)
+                    {
+                        return owner->receiveResponse(m_sid);
+                    }
+                    else
+                    {
+                        return XMLElement::Ptr();
+                    }
+                }
+
             private:
                 recursive_mutex m_mutex;
                 weak_ptr<ConnectionManager> m_owner;
@@ -540,7 +577,8 @@ namespace Iotivity
         }
 
         ConnectionManager::ConnectionManager():
-            m_mutex(), m_shutdown(false), m_sessionsBySID(), m_runner(*this)
+            m_mutex(), m_shutdown(false), m_sessionsBySID(),
+            m_runner(*this), m_onConnected(m_mutex)
         {
         }
 
@@ -566,7 +604,7 @@ namespace Iotivity
                                                 shared_ptr<IHttpConnection> connection,
                                                 BOSHConnectionPromise boshConnection)
         {
-            if (connection && boshConnection)
+            if (connection)
             {
                 try
                 {
@@ -593,13 +631,24 @@ namespace Iotivity
                                     lock_guard<recursive_mutex> lock(m_mutex);
                                     if (m_sessionsBySID.find(sid) == m_sessionsBySID.end())
                                     {
-                                        session->populateSession(move(response));
+                                        session->populateSession(response);
                                         m_sessionsBySID[sid] = session;
 
-                                        shared_ptr<BOSHConnection> connection =
+                                        shared_ptr<BOSHConnection> newBOSHConnection =
                                             make_shared<BOSHConnection>(shared_from_this(), sid);
 
-                                        boshConnection->set_value(connection);
+                                        onConnected().fire(BOSHConnectedEvent(connect_error::SUCCESS,
+                                                                              connection,
+                                                                              newBOSHConnection));
+                                        if (boshConnection)
+                                        {
+                                            boshConnection->set_value(newBOSHConnection);
+                                        }
+
+                                        if (response)
+                                        {
+                                            session->queueReceivedResponse(move(response));
+                                        }
                                     }
                                     else
                                     {
@@ -613,13 +662,21 @@ namespace Iotivity
                             }
                         }
                         // TODO: make connect_error std::exception derived
-                        catch (const connect_error &)
+                        catch (const connect_error &ce)
                         {
-                            boshConnection->set_exception(current_exception());
+                            onConnected().fire(BOSHConnectedEvent(ce));
+                            if (boshConnection)
+                            {
+                                boshConnection->set_exception(current_exception());
+                            }
                         }
                         catch (const exception &)
                         {
-                            boshConnection->set_exception(current_exception());
+                            onConnected().fire(BOSHConnectedEvent(connect_error::ecBOSHConnectError));
+                            if (boshConnection)
+                            {
+                                boshConnection->set_exception(current_exception());
+                            }
                         }
                     };
 
@@ -628,7 +685,11 @@ namespace Iotivity
                 }
                 catch (const exception &)
                 {
-                    boshConnection->set_exception(current_exception());
+                    onConnected().fire(BOSHConnectedEvent(connect_error::ecBOSHConnectError));
+                    if (boshConnection)
+                    {
+                        boshConnection->set_exception(current_exception());
+                    }
                 }
             }
             else
@@ -659,6 +720,11 @@ namespace Iotivity
                                                                 condition);
                             },
                             response);
+
+                            if (response)
+                            {
+                                session->queueReceivedResponse(move(response));
+                            }
                         }
                         catch (const exception &)
                         {}
@@ -701,6 +767,19 @@ namespace Iotivity
             }
         }
 
+        XMLElement::Ptr ConnectionManager::receiveResponse(const SID &sid)
+        {
+            XMLElement::Ptr element;
+            lock_guard<recursive_mutex> lock(m_mutex);
+            const auto f = m_sessionsBySID.find(sid);
+            if (f != m_sessionsBySID.end())
+            {
+                auto session = f->second;
+                element = session->popQueuedResponse();
+            }
+            return element;
+        }
+
         void ConnectionManager::sendSynchronousRequest(
             shared_ptr<IHttpConnection> connection, XML::XMLElement::Ptr request,
             XML::XMLElement::Ptr &response)
@@ -719,6 +798,7 @@ namespace Iotivity
                     {
                         respDoc->parse(connection->response());
                         response = respDoc->documentElement();
+                        cout << "RESPONSE: " << response->xml() << endl;
                     }
                     else
                     {
@@ -799,6 +879,11 @@ namespace Iotivity
                                         return session->createPayload(doc, payloads);
                                     },
                                     response);
+
+                                    if (response)
+                                    {
+                                        session->queueReceivedResponse(move(response));
+                                    }
 
                                     session->resetInactivity();
                                     session->markPoll();

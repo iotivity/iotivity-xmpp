@@ -88,7 +88,10 @@ TEST(BOSH, TestClientConnection)
 
     auto connection = make_shared<HttpCurlConnection>(xmpp_connect_config::BOSHUrl());
 
-    connection->setProxy(ProxyConfig::queryProxy());
+    string BOSHProxy = xmpp_connect_config::BOSHProxy();
+    auto proxyConfig = BOSHProxy.size() > 0 ? ProxyConfig(BOSHProxy) :  ProxyConfig::queryProxy();
+
+    connection->setProxy(proxyConfig);
 
     shared_ptr<ConnectionManager> manager = ConnectionManager::create();
     ASSERT_NE(manager, nullptr);

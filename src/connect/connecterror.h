@@ -53,6 +53,7 @@ namespace Iotivity
                     ecSuccess = 0,
                     ecTLSNegotiationInProgress = -100,
                     ecServerClosedStream = -101,
+                    ecStreamWouldBlock = -102,
 
                     ecNotSupported      = -1000, ///< Operation not supported (generally by connection)
                     ecXMLParserError    = -1001, ///< Invalid or malformed XML body payload
@@ -89,7 +90,8 @@ namespace Iotivity
                     ecStreamResourceNotBound = -1031,
                     ecAttemptToRestartBoundStream = -1032,
                     ecErrorEncodingNonce = -1033,
-                    ecInvalidMessage = -1034
+                    ecInvalidMessage = -1034,
+                    ecBOSHConnectError = -1035
 
                 };
 

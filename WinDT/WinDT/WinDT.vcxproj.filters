@@ -123,6 +123,9 @@
     <ClInclude Include="..\..\src\xmpp\xmppevents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\xmpp\xmppbosh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -204,6 +207,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\xmpp\xmppstream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\xmpp\xmppbosh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

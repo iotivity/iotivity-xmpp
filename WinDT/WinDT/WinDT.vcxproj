@@ -260,6 +260,7 @@
     <ClInclude Include="..\..\src\xml\portabledom.h" />
     <ClInclude Include="..\..\src\xmpp\jabberid.h" />
     <ClInclude Include="..\..\src\xmpp\sasl.h" />
+    <ClInclude Include="..\..\src\xmpp\xmppbosh.h" />
     <ClInclude Include="..\..\src\xmpp\xmppclient.h" />
     <ClInclude Include="..\..\src\xmpp\xmppconfig.h" />
     <ClInclude Include="..\..\src\xmpp\xmppevents.h" />
@@ -291,6 +292,7 @@
     <ClCompile Include="..\..\src\xml\portabledom.cpp" />
     <ClCompile Include="..\..\src\xmpp\jabberid.cpp" />
     <ClCompile Include="..\..\src\xmpp\sasl.cpp" />
+    <ClCompile Include="..\..\src\xmpp\xmppbosh.cpp" />
     <ClCompile Include="..\..\src\xmpp\xmppclient.cpp" />
     <ClCompile Include="..\..\src\xmpp\xmppconfig.cpp" />
     <ClCompile Include="..\..\src\xmpp\xmppextension.cpp" />

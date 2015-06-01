@@ -452,7 +452,6 @@ struct SimpleConnection
                     {
                         static int s_index = 0;
                         string testMessage = "SIMPLE TEST MESSAGE" + to_string(s_index++);
-                        cout << "SENDING MESSAGE (" << m_instance << "): " << testMessage << endl;
                         xmpp_send_message(m_messageContext, recipient.c_str(),
                                           testMessage.c_str(), testMessage.size(),
                                           XMPP_MESSAGE_TRANSMIT_DEFAULT);
@@ -475,11 +474,19 @@ struct SimpleConnection
 
     ~SimpleConnection()
     {
+        shutdown();
+    }
+
+    void shutdown()
+    {
+        if (!m_shutdown)
+        {
         m_shutdown = true;
         if (m_thread.joinable())
         {
             m_thread.join();
         }
+    }
     }
 
     static void connected(void *const param, xmpp_error_code_t result,
@@ -621,6 +628,9 @@ TEST(ra_xmpp, message_send_receive_test)
 
         // Run the send-receive test for approx. 5 seconds.
         this_thread::sleep_for(chrono::seconds(5));
+
+        connection1.shutdown();
+        connection2.shutdown();
 
         EXPECT_GT(connection1.messageQueue().size(), 0UL);
         EXPECT_GT(connection1.sentCalls(), 0UL);

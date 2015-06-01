@@ -422,10 +422,10 @@ TEST(portableDOM_Tests, Streaming_Parser_Continuations)
 
 TEST(portableDOM_Tests, Streaming_Parser_Continuations_ByteBuffer)
 {
-    string payload = "<simple from='fromtest' to='xmpp-dev.iotivity.intel.com' "
-                     "version='1.0' xml:lang='en' xmlns='jabber:client'><subnode/>"
-                     "</simple><next/><next attr='sub'><!--comment--></next><simple></simple>"
-                     "  <final/>";
+    const string payload = "<simple from='fromtest' to='xmpp-dev.iotivity.intel.com' "
+                           "version='1.0' xml:lang='en' xmlns='jabber:client'><subnode/>"
+                           "</simple><next/><next attr='sub'><!--comment--></next><simple></simple>"
+                           "  <final/>";
 
     size_t totalBytesRead = 0;
     size_t totalPayloads = 0;
@@ -458,4 +458,36 @@ TEST(portableDOM_Tests, Streaming_Parser_Continuations_ByteBuffer)
 }
 
 
+TEST(portableDOM_Tests, Import_Node)
+{
+    const string payload = "<simple from='fromtest' to='xmpp-dev.iotivity.intel.com' "
+                           "version='1.0' xml:lang='en' xmlns='jabber:client'>"
+                           "<subnode testAttr=\"attr_value\"><innerNode/><innerNode2/></subnode>"
+                           "</simple>";
+
+    auto sourceDoc = XML::XMLDocument::createEmptyDocument();
+    ASSERT_NE(sourceDoc, nullptr);
+    ASSERT_NO_THROW(sourceDoc->parse(payload));
+
+    auto destDoc = XML::XMLDocument::createEmptyDocument();
+    ASSERT_NE(destDoc, nullptr);
+
+    auto rootElement = sourceDoc->documentElement();
+    ASSERT_NE(rootElement, nullptr);
+
+    for (auto && i : rootElement->elements())
+    {
+        auto element = destDoc->importNode(*i);
+        EXPECT_NE(element, nullptr);
+        if (element)
+        {
+            destDoc->appendChild(element);
+        }
+        break;
+    }
+
+    EXPECT_EQ(destDoc->xml(),
+              "<subnode testAttr=\"attr_value\"><innerNode/><innerNode2/></subnode>");
+
+}
 

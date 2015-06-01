@@ -86,8 +86,8 @@ namespace Iotivity
 
         /// @brief The default implementation of IXmppConnection.
         ///
-        /// Provides a connection to an XMPP Server given a stream connection or BOSH
-        /// connection to establish the XMPPstream through.
+        /// Provides a connection to an XMPP Server given a stream connection
+        /// to establish the XMPP stream through.
         ///
         /// @ingroup XMPP
         class XMPP_API XmppConnection: public IXmppConnection,

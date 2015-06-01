@@ -31,6 +31,7 @@
 #include <xmpp/xmppstrophe.h>
 #else
 #include <xmpp/xmppclient.h>
+#include <xmpp/xmppbosh.h>
 #endif
 #include <xmpp/xmppconfig.h>
 #include <xmpp/sasl.h>
@@ -1243,53 +1244,92 @@ TEST(XmppClient, XMPP_Sasl_Prep)
 }
 
 
+
+// NOTE: For the moment libstrophe has no BOSH support, so this test is not applicable if
+//       the libstrophe port is being used.
+#ifndef ENABLE_LIBSTROPHE
+
 TEST(XmppClient, XMPP_StreamEstablishOverBOSH)
 {
     auto remoteConnect = make_shared<HttpCurlConnection>(xmpp_connect_config::BOSHUrl());
 
-    remoteConnect->setProxy(ProxyConfig::queryProxy());
+    string BOSHProxy = xmpp_connect_config::BOSHProxy();
+    if (BOSHProxy.size() > 0)
+    {
+        cout << "BOSH Proxy " << BOSHProxy << endl;
+    }
+    auto proxyConfig = BOSHProxy.size() > 0 ? ProxyConfig(BOSHProxy) :  ProxyConfig::queryProxy();
+
+    remoteConnect->setProxy(proxyConfig);
 
     shared_ptr<ConnectionManager> manager = ConnectionManager::create();
     ASSERT_NE(manager, nullptr);
     BOSHConfig boshConfig(xmpp_connect_config::host());
 
     boshConfig.setUseKeys(true);
-    //auto xmppBOSH = make_shared<XmppBOSHConnection>(manager, remoteConnect, boshConfig);
-
-    /*
-
-    auto xmlConnection = make_shared<XmppConnection>(
-                                static_pointer_cast<IXmlConnection>(xmppBOSH));
+    auto xmppBOSH = make_shared<XmppBOSHConnection>(manager, remoteConnect, boshConfig);
 
     auto streamPromise = make_shared<promise<shared_ptr<IXmppStream>>>();
     auto streamFuture = streamPromise->get_future();
 
     SecureBuffer password;
-    password.write("unitTestPassword");
-    auto plainConfig = SaslPlain::Params::create("unittest", password);
+    password.write(xmpp_connect_config::password());
+    auto scramConfig = SaslScramSha1::Params::create(xmpp_connect_config::userName(), password);
+    auto plainConfig = SaslPlain::Params::create(xmpp_connect_config::userName(), password);
 
-    XmppConfig config("", xmpp_connect_config::xmppDomain());
+    XmppConfig config(JabberID(xmpp_connect_config::userJID()), xmpp_connect_config::xmppDomain());
     config.requireTLSNegotiation();
+    config.setSaslConfig("SCRAM-SHA-1", scramConfig);
     config.setSaslConfig("PLAIN", plainConfig);
 
     auto client = XmppClient::create();
-    ASSERT_NO_THROW(client->initiateXMPP(config, xmlConnection, streamPromise));
+    ASSERT_NO_THROW(client->initiateXMPP(config, xmppBOSH, streamPromise));
 
     shared_ptr<IXmppStream> xmppStream;
     EXPECT_NO_THROW(xmppStream = streamFuture.get());
     EXPECT_NE(xmppStream, nullptr);
     if (xmppStream)
     {
+        cout << "GOT STREAM FUTURE" << endl;
         ASSERT_TRUE(xmppStream->whenNegotiated().valid());
 
-        auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(5));
+        auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(10));
         EXPECT_EQ(status, future_status::ready);
-        if (status==future_status::ready)
+        if (status == future_status::ready)
         {
-            EXPECT_NO_THROW(xmppStream->whenNegotiated().get());
+            try
+            {
+                xmppStream->whenNegotiated().get();
+                auto doc = XMLDocument::createEmptyDocument();
+                auto message = doc->createElement("iq");
+                message->setAttribute("type", "get");
+                message->setAttribute("id", xmppStream->getNextID());
+                message->setAttribute("to", xmpp_connect_config::xmppDomain());
+
+                auto query = doc->createElement("query");
+                query->setAttribute("xmlns", "http://jabber.org/protocol/disco#info");
+
+                message->appendChild(query);
+                doc->appendChild(message);
+
+                promise<void> ready;
+                future<void> readyFuture = ready.get_future();
+                xmppStream->sendQuery(move(message),
+                                      [&ready](const connect_error &, XMLElement::Ptr)
+                {
+                    promise<void> localReady = move(ready);
+                    localReady.set_value();
+                });
+                readyFuture.wait_for(chrono::seconds(2));
+        }
+            catch (...)
+            {
+                EXPECT_NO_THROW(throw);
+    }
         }
     }
-    */
 }
 
-#endif // ifndef DISABLE_SUPPORT_NATIVE_XMPP_CLIENT
+#endif //ENABLE_LIBSTROPHE
+
+#endif // DISABLE_SUPPORT_NATIVE_XMPP_CLIENT

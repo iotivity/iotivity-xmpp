@@ -30,12 +30,19 @@
 #include "../xml/portabledom.h"
 #include "../common/actions.h"
 #include "../common/stcqueue.h"
+#include "../common/sync_notify.h"
 #include "../connect/connecterror.h"
 #include <memory>
 #include <map>
 #include <future>
 
 #ifndef DISABLE_SUPPORT_BOSH
+
+#ifdef _WIN32
+XMPP_TEMPLATE template class XMPP_API std::basic_string<char, std::char_traits<char>,
+        std::allocator<char>>;
+XMPP_TEMPLATE template class XMPP_API std::chrono::duration<long long>;
+#endif
 
 /// @defgroup BOSH XMPP-BOSH Client Connectivity
 
@@ -44,15 +51,7 @@ namespace Iotivity
     namespace Xmpp
     {
         class IHttpConnection;
-
-        /// @brief Base interface for the BOSH connection manager
-        /// @interface IConnectionManager
-        /// @ingroup BOSH
-        class IConnectionManager
-        {
-            public:
-                virtual ~IConnectionManager() {}
-        };
+        class BOSHConfig;
 
         /// @brief Base interface for all BOSH connections.
         /// @interface IBOSHConnection
@@ -64,6 +63,47 @@ namespace Iotivity
 
                 virtual void close() = 0;
                 virtual void sendRequest(XML::XMLElement::Ptr request) = 0;
+                virtual XML::XMLElement::Ptr receiveResponse() = 0;
+        };
+
+        struct BOSHConnectedEvent
+        {
+                BOSHConnectedEvent() = delete;
+                BOSHConnectedEvent(const connect_error &errorResult):
+                    m_result(errorResult) {}
+                BOSHConnectedEvent(const connect_error &errorResult,
+                                   std::shared_ptr<IHttpConnection> httpConnection,
+                                   std::shared_ptr<IBOSHConnection> BOSHConnection):
+                    m_result(errorResult), m_httpConnection(httpConnection),
+                    m_BOSHConnection(BOSHConnection) {}
+
+                connect_error result() const { return m_result; }
+                std::shared_ptr<IBOSHConnection> connection() const { return m_BOSHConnection; }
+
+            private:
+                connect_error m_result;
+                std::shared_ptr<IHttpConnection> m_httpConnection;
+                std::shared_ptr<IBOSHConnection> m_BOSHConnection;
+        };
+
+
+        /// @brief Base interface for the BOSH connection manager
+        /// @interface IConnectionManager
+        /// @ingroup BOSH
+        class IConnectionManager
+        {
+            public:
+                typedef std::shared_ptr<std::promise<std::shared_ptr<IBOSHConnection>>>
+                BOSHConnectionPromise;
+
+                virtual ~IConnectionManager() {}
+
+                virtual SyncEvent<BOSHConnectedEvent> &onConnected() = 0;
+                virtual void initiateSession(const BOSHConfig &config,
+                                             std::shared_ptr<IHttpConnection> connection,
+                                             BOSHConnectionPromise boshConnection =
+                                                 BOSHConnectionPromise()) = 0;
+
         };
 
         /// @cond HIDDEN_SYMBOLS
@@ -92,7 +132,7 @@ namespace Iotivity
 
         /// @brief BOSH Connection Configuration
         /// @ingroup BOSH
-        class BOSHConfig
+        class XMPP_API BOSHConfig
         {
             public:
                 BOSHConfig();
@@ -147,9 +187,7 @@ namespace Iotivity
 
                 virtual ~ConnectionManager();
 
-                typedef std::shared_ptr<std::promise<std::shared_ptr<IBOSHConnection>>>
-                BOSHConnectionPromise;
-
+                virtual SyncEvent<BOSHConnectedEvent> &onConnected() override { return m_onConnected; }
                 /// Initiate a BOSH session.
                 /// @param config The configuration parameters of the remote BOSH server connection.
                 /// @param connection A shared pointer to any connection which provides direct
@@ -161,10 +199,13 @@ namespace Iotivity
                 //          returned, do not wait on the boshConnection promise.
                 virtual void initiateSession(const BOSHConfig &config,
                                              std::shared_ptr<IHttpConnection> connection,
-                                             BOSHConnectionPromise boshConnection);
+                                             BOSHConnectionPromise boshConnection =
+                                                 BOSHConnectionPromise()) override;
 
                 void terminateSession(const SID &sid, const std::string &condition = "");
                 void sendRequest(const SID &sid, XML::XMLElement::Ptr request);
+
+                XML::XMLElement::Ptr receiveResponse(const SID &sid);
 
             protected:
                 ConnectionManager();
@@ -218,6 +259,7 @@ namespace Iotivity
                 bool m_shutdown;
                 SessionMap m_sessionsBySID;
                 Runner m_runner;
+                SyncEvent<BOSHConnectedEvent> m_onConnected;
         };
     }
 }

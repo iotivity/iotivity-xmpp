@@ -90,6 +90,12 @@ string xmpp_connect_config::BOSHUrl(const string &configuration)
     return s_config[configuration]["BOSHUrl"];
 }
 
+string xmpp_connect_config::BOSHProxy(const string &configuration)
+{
+    if (!hasConfig(configuration)) return "";
+    return s_config[configuration]["BOSHProxy"];
+}
+
 bool xmpp_connect_config::hasConfig(const string &configuration)
 {
     if (!s_loaded) return false;

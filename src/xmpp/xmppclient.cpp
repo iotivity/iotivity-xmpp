@@ -1719,6 +1719,12 @@ namespace Iotivity
                             // read is queued up on the XmppClient action queue.
                             self->queueReadAction(stream, remoteServer);
                         }
+                        else if (self && ec.errorType() == connect_error::etConnectError() &&
+                                 ec.errorCode() == connect_error::ecStreamWouldBlock)
+                        {
+                            // TODO: Delay operation on queue...
+                            self->queueReadAction(stream, remoteServer);
+                        }
                         else
                         {
                             if (stream)

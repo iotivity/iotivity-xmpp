@@ -24,6 +24,9 @@
     <BOSHUrl>
       xmpp-dev-lb.api.intel.com/http-bind
     </BOSHUrl>
+    <BOSHProxy>
+      proxy-us.intel.com:912
+    </BOSHProxy>
   </config>
   <config name="NO_PROXY">
     <host>

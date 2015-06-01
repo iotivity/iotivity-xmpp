@@ -47,6 +47,7 @@ struct xmpp_connect_config
 
         static std::string userJID(const std::string &configuration = "DEFAULT");
         static std::string BOSHUrl(const std::string &configuration = "DEFAULT");
+        static std::string BOSHProxy(const std::string &configuration = "DEFAULT");
         static bool hasConfig(const std::string &configuration = "DEFAULT");
 
     protected:
