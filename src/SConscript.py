@@ -65,14 +65,21 @@ if target_os not in ['windows', 'winrt']:
         '-flto',
         '-fno-rtti',
         '-DCCF_XMPP_EXPORTS',
+        '-DASIO_STANDALONE',
+        '-DASIO_NO_TYPEID',
         '-Os',
-        '-Wl,--gc-sections',
-        '-Wl,--strip-all',
         '-Wall', 
         '-Werror',
         '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
         '-fPIC',
         ])
+    if target_os not in ['darwin','ios']:
+        ra_xmpp_env.AppendUnique(
+            CXXFLAGS = [
+                '-Wl,--gc-sections',
+                '-Wl,--strip-all',
+                ])
+    
     if env['STROPHE']:
         ccfxmpp_lib_env.AppendUnique(CXXFLAGS = [
             '-DENABLE_LIBSTROPHE',
@@ -83,7 +90,6 @@ if target_os not in ['windows', 'winrt']:
             '-g',
             '-DLOGSTREAM_ENABLE_ALL_LOGGING',
             ])
-
 elif target_os in ['windows', 'winrt']:
     ccfxmpp_lib_env.AppendUnique(CPPPATH = ['#WinDT/WinDT/'])
 
@@ -93,8 +99,10 @@ elif target_os == 'android':
 #	ccfxmpp_lib_env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
 #	ccfxmpp_lib_env.AppendUnique(LIBS = ['octbstack', 'oc_logger', 'boost_thread', 'gnustl_static', 'log'])
 
-elif target_os in ['darwin', 'ios']:
+
+if target_os in ['darwin', 'ios']:
     ccfxmpp_lib_env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+    ccfxmpp_lib_env.AppendUnique(CPPPATH = ['/usr/local/include'])
 #	ccfxmpp_lib_env.AppendUnique(LIBS = ['octbstack', 'oc_logger'])
 
 
@@ -105,8 +113,9 @@ ccfxmpp_lib_env.Install(env.get('BUILD_DIR'), libccfxmpp_st)
 ccfxmpp_shared_lib_env = ccfxmpp_lib_env.Clone()
 ccfxmpp_shared_lib_env.AppendUnique(CXXFLAGS = ['-fvisibility=hidden'])
 
-libccfxmpp_sh = ccfxmpp_shared_lib_env.SharedLibrary('ccfxmpp', ccfxmpp_src)
-ccfxmpp_shared_lib_env.Install(env.get('BUILD_DIR'), libccfxmpp_sh)
+if target_os not in ['darwin', 'ios']:
+    libccfxmpp_sh = ccfxmpp_shared_lib_env.SharedLibrary('ccfxmpp', ccfxmpp_src)
+    ccfxmpp_shared_lib_env.Install(env.get('BUILD_DIR'), libccfxmpp_sh)
 
 
 if env['RELEASE']:

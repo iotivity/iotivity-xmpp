@@ -26,6 +26,7 @@ def dir_offset_from_current(subdir):
 
 
 Import('env')
+target_os = env.get('TARGET_OS')
 
 safec_env = env.Clone()
 
@@ -34,25 +35,31 @@ libs_dir = src_dir+'src/.libs/'
 
 safec_library_file = 'libsafec-10052013.tar.gz'
 
-if not os.path.exists(src_dir):
-    safec_zip = safec_env.URLDownload(safec_library_file, 'http://sourceforge.net/projects/safeclib/files/libsafec-10052013.tar.gz/download')
-    safec_dir = safec_env.UnpackAll(src_dir+'configure', safec_zip)
+if target_os not in ['darwin']:
+    if not os.path.exists(src_dir):
+        safec_zip = safec_env.URLDownload(safec_library_file, 'http://sourceforge.net/projects/safeclib/files/libsafec-10052013.tar.gz/download')
+        safec_dir = safec_env.UnpackAll(src_dir+'configure', safec_zip)
 
-make_file = safec_env.Configure(src_dir+'Makefile', src_dir+'configure')
+    make_file = safec_env.Configure(src_dir+'Makefile', src_dir+'configure')
+    
+    # Run make dependent on whether one of the targets was created (not all). We mark this
+    # target precious because it was not created by scons and should not be deleted by it when
+    # the next build is run.
+    safec_env.Precious(safec_env.Make(libs_dir+'libsafec-1.0.so', make_file))
+    
+    safec_env.Depends(libs_dir+'libsafec-1.0.so.1', libs_dir+'libsafec-1.0.so')
+    safec_env.Install(env['BUILD_DIR'], libs_dir+'libsafec-1.0.so.1')
+    
+    
+    
+    # Append the path to safec to the original environment
+    env.AppendUnique(CPPPATH = [dir_offset_from_current(src_dir+'include/')],
+                     LIBPATH = [dir_offset_from_current(src_dir+'src/.libs/')])
 
-# Run make dependent on whether one of the targets was created (not all). We mark this
-# target precious because it was not created by scons and should not be deleted by it when
-# the next build is run.
-safec_env.Precious(safec_env.Make(libs_dir+'libsafec-1.0.so', make_file))
-
-safec_env.Depends(libs_dir+'libsafec-1.0.so.1', libs_dir+'libsafec-1.0.so')
-safec_env.Install(env['BUILD_DIR'], libs_dir+'libsafec-1.0.so.1')
-
-
-# Append the path to safec to the original environment
-env.AppendUnique(CPPPATH = [dir_offset_from_current(src_dir+'include/')],
-                 LIBPATH = [dir_offset_from_current(src_dir+'src/.libs/')])
-
+else:
+       # Append the path to safec to the original environment
+    env.AppendUnique(CPPPATH = [dir_offset_from_current('/usr/local/include/libsafec')])
+ 
 #env.Repository(src_dir+'include')
 
 

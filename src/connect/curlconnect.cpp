@@ -104,7 +104,7 @@ namespace Iotivity
             if (m_curl)
             {
                 CURLcode result = curl_easy_setopt(m_curl, CURLOPT_URL, url.c_str());
-                result = result;
+                (void) result;
             }
         }
 

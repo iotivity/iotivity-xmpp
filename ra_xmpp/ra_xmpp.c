@@ -34,9 +34,7 @@
 #include <string.h>
 #include <errno.h>
 
-#ifdef __APPLE__
-#include <safec/safe_lib.h>
-#elif !defined(_WIN32)
+#if !defined(_WIN32)
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
 #else
@@ -159,8 +157,12 @@ void free_c_str(char *const str)
 void xmpp_context_init(xmpp_context_t *const context)
 {
     if (context)
-    {
+    {    
+#if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
+        memset_s(context, sizeof(*context), 0,sizeof(*context));
+#else
         memset_s(context, sizeof(*context), 0);
+#endif
         context->cb = sizeof(*context);
     }
 }
@@ -187,8 +189,12 @@ void xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
                     xmpp_protocol_t protocol)
 {
     if (host)
-    {
-        memset_s(host, sizeof(*host), 0);
+    {    
+#if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
+       memset_s(host, sizeof(*host), 0,sizeof(*host));
+#else
+       memset_s(host, sizeof(*host), 0);
+#endif
         host->cb = sizeof(*host);
 
         host->host = clone_c_str(host_name);
@@ -220,8 +226,12 @@ void xmpp_identity_init(xmpp_identity_t *const identity, const char *const user_
                         InBandRegister_t inband_register)
 {
     if (identity)
-    {
+    {    
+#if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
+        memset_s(identity, sizeof(*identity), 0,sizeof(*identity));
+#else
         memset_s(identity, sizeof(*identity), 0);
+#endif
         identity->cb = sizeof(*identity);
 
         identity->user_name = clone_c_str(user_name);
@@ -253,8 +263,14 @@ void xmpp_proxy_init(xmpp_proxy_t *const proxy, const char *const host,
                      uint16_t port, xmpp_proxy_type_t proxy_type)
 {
     if (proxy)
-    {
+    {    
+#if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
+        memset_s(proxy, sizeof(*proxy), 0,sizeof(*proxy));
+#else
         memset_s(proxy, sizeof(*proxy), 0);
+#endif
+
+
         proxy->cb = sizeof(*proxy);
 
         proxy->proxy_type = proxy_type;

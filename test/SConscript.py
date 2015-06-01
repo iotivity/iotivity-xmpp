@@ -59,7 +59,8 @@ if target_os not in ['windows', 'winrt']:
             ],
         CPPPATH = [
             '#src/platform/linux/',
-            '#src'],
+            '#src'
+            ],
         CXXFLAGS = [
             '-std=c++11',
             '-fdata-sections',
@@ -67,13 +68,12 @@ if target_os not in ['windows', 'winrt']:
             '-flto',
             '-fno-rtti',
             '-DCCF_XMPP_EXPORTS',
+            '-DASIO_STANDALONE',
+            '-DASIO_NO_TYPEID',
+            '-DGTEST_HAS_EXCEPTIONS=1',
             '-Wall', 
             '-Werror',
             '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
-            ],
-        LINKFLAGS = [
-            '-Wl,--gc-sections',
-            '-Wl,--strip-all',
             ])
     if env['STROPHE']==1:
         ccfxmpp_tests_env.AppendUnique(
@@ -81,6 +81,13 @@ if target_os not in ['windows', 'winrt']:
                 '-DENABLE_LIBSTROPHE',
             ],  
             LIBS = ['libstrophe'])
+    if target_os not in ['darwin']:
+        ccfxmpp_tests_env.AppendUnique(
+            LINKFLAGS = [
+            '-Wl,--gc-sections',
+            '-Wl,--strip-all',
+            ])
+
     if not env['RELEASE']:
         ccfxmpp_tests_env.AppendUnique(CXXFlags = [
             '-DLOGSTREAM_ENABLE_ALL_LOGGING',

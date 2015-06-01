@@ -154,7 +154,7 @@ namespace Iotivity
             m_restartPending(true), m_workingBuffer(make_shared<StreamBuffer>())
         {}
 
-        XmppConnection::~XmppConnection()
+        XmppConnection::~XmppConnection() _NOEXCEPT
         {
             try
             {
@@ -234,7 +234,7 @@ namespace Iotivity
             }
         }
 
-        const static size_t DEFAULT_BUFFER_SIZE = 4096;
+      //  const static size_t DEFAULT_BUFFER_SIZE = 4096;
 
         void XmppConnection::receive(XMLElement::Ptr &payload)
         {
@@ -1486,7 +1486,7 @@ namespace Iotivity
         // Action runner for the XMPP client.
         struct XmppClientRunner: public ActionRunner<std::shared_ptr<IXmppConnection>, XmppContext>
         {
-                XmppClientRunner(XmppClient &owner): m_owner(owner) {}
+                XmppClientRunner(XmppClient &owner) /*: m_owner(owner)*/ {}
 
             protected:
                 virtual std::thread createActionThread(std::shared_ptr<runner_queue> queue,
@@ -1529,7 +1529,7 @@ namespace Iotivity
                 }
 
             private:
-                XmppClient &m_owner;
+              //  XmppClient &m_owner;
         };
         /// @endcond
 
