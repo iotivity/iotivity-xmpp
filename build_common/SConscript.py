@@ -103,12 +103,12 @@ print "TARGET_ARCH:", platform_arch()
 #if platform_host() == 'windows':
 #    if not env.WhereIs('7z'):
 #        print_warning('7-Zip is required to unpack externally downloaded libraries. Attempting to get 7-zip.')
-#        
-#        if '64' in platform_arch():            
+#
+#        if '64' in platform_arch():
 #            sevenzip_exe = env.URLDownload('7z920-x64.msi', 'http://www.7-zip.org/a/7z920-x64.msi')
 #        else:
 #            sevenzip_exe = env.URLDownload('7z920.exe', 'http://www.7-zip.org/a/7z920.exe')
-#            
+#
 
 # Configure help for command-line options
 help_vars.Update(env)
@@ -219,12 +219,12 @@ def versionSufficient(sourceVer, requiredVer):
             verOkay = False
             break
         if p[0]>p[1]:
-            break        
+            break
     return verOkay
 
 
 if 'linux' in env['HOST']:
-    # Check g++ version (GCC C-version shouldn't matter as much, but can be checked too 
+    # Check g++ version (GCC C-version shouldn't matter as much, but can be checked too
     # here if needed)
     REQUIRED_VER = "4.8.1"
     # Check gcc version
@@ -232,8 +232,8 @@ if 'linux' in env['HOST']:
         print "g++ version is insufficient to compile the client. Required:", REQUIRED_VER, " Found:", env['CXXVERSION']
         Exit(2)
 
-    print "CCERVSION", env['CCVERSION']
-    print "CXXERVSION", env['CXXVERSION']
+    print "CCVERVSION", env['CCVERSION']
+    print "CXXVERVSION", env['CXXVERSION']
 
 
 env = conf.Finish()

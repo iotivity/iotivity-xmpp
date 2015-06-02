@@ -737,7 +737,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
                 EXPECT_NO_THROW(xmppStream->close());
 
                 remoteTcp->closed().wait();
-                EXPECT_EQ(remoteTcp->expressionMatchFailures(), 0);
+                EXPECT_EQ(remoteTcp->expressionMatchFailures(), 0UL);
             }
         }
         catch (const connect_error &ce)
@@ -1224,7 +1224,7 @@ TEST(XmppClient, XMPP_Sasl_Prep)
         str_helper::utf32ToUtf8(*nextIn++, &tempBuffer[0],
                                 sizeof(tempBuffer) / sizeof(tempBuffer[0]), charsWritten);
 
-        ASSERT_NE(charsWritten, 0);
+        ASSERT_NE(charsWritten, 0UL);
 
         initialStr += string(&tempBuffer[0], charsWritten);
     }
