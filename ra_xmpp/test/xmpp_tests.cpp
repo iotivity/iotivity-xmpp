@@ -529,7 +529,7 @@ struct SimpleConnection
             EXPECT_NE(msg, nullptr);
             // Strictly speaking, messageOctets may be 0 for a zero-length message, but
             // we are not testing 0-length messages here at the moment.
-            EXPECT_GT(messageOctets, 0);
+            EXPECT_GT(messageOctets, 0UL);
 
             if (param && msg)
             {
@@ -616,8 +616,8 @@ TEST(ra_xmpp, message_send_receive_test)
         // Run the send-receive test for approx. 5 seconds.
         this_thread::sleep_for(chrono::seconds(5));
 
-        EXPECT_GT(connection1.messageQueue().size(), 0);
-        EXPECT_GT(connection1.sentCalls(), 0);
+        EXPECT_GT(connection1.messageQueue().size(), 0UL);
+        EXPECT_GT(connection1.sentCalls(), 0UL);
 
         for (const auto &s : connection1.messageQueue())
         {
@@ -625,8 +625,8 @@ TEST(ra_xmpp, message_send_receive_test)
         }
 
 
-        EXPECT_GT(connection2.messageQueue().size(), 0);
-        EXPECT_GT(connection2.sentCalls(), 0);
+        EXPECT_GT(connection2.messageQueue().size(), 0UL);
+        EXPECT_GT(connection2.sentCalls(), 0UL);
 
         for (const auto &s : connection2.messageQueue())
         {

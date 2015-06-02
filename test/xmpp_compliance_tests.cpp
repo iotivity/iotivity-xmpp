@@ -133,7 +133,7 @@ TEST(Xmpp_Compliance, bind_mtn)
     auto stream = runner.stream();
     ASSERT_NE(stream, nullptr);
     JabberID boundID = stream->boundResource();
-    ASSERT_GT(boundID.full().size(), 0);
+    ASSERT_GT(boundID.full().size(), 0UL);
 
     // It is not clear whether the compliance to bind-mtn requires that stanzas be limited
     // if binding does not complete. That is in constrast with the behavior of extensions like

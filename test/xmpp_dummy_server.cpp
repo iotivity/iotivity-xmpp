@@ -377,7 +377,7 @@ void SegmentRunner::run(const SegmentArray &segments)
 
                 remoteTcp->closed().wait();
             }
-            EXPECT_EQ(remoteTcp->expressionMatchFailures(), 0);
+            EXPECT_EQ(remoteTcp->expressionMatchFailures(), 0UL);
 
             m_captures = remoteTcp->captures();
         }

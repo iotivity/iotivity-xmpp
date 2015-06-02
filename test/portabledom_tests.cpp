@@ -253,7 +253,7 @@ TEST(portableDOM_Tests, XMLElement_selectNodes)
         ASSERT_NE(node, nullptr);
         ++counter;
     }
-    EXPECT_EQ(counter, 3);
+    EXPECT_EQ(counter, 3UL);
 
     size_t counter2 = 0;
     for (const auto &node : documentElement->nodes())
@@ -261,7 +261,7 @@ TEST(portableDOM_Tests, XMLElement_selectNodes)
         ASSERT_NE(node, nullptr);
         ++counter2;
     }
-    EXPECT_EQ(counter2, 6);
+    EXPECT_EQ(counter2, 6UL);
 
     size_t counter3 = 0;
     for (const auto &element : documentElement->elements())
@@ -269,7 +269,7 @@ TEST(portableDOM_Tests, XMLElement_selectNodes)
         ASSERT_NE(element, nullptr);
         ++counter3;
     }
-    EXPECT_EQ(counter3, 5);
+    EXPECT_EQ(counter3, 5UL);
 
 }
 
@@ -406,7 +406,7 @@ TEST(portableDOM_Tests, Streaming_Parser_Continuations)
             size_t bytesRead = doc->parsePartial(payload.substr(totalBytesRead), node);
 
             ASSERT_NE(node, nullptr);
-            EXPECT_NE(bytesRead, 0);
+            EXPECT_NE(bytesRead, 0UL);
 
             totalBytesRead += bytesRead;
             ++totalPayloads;
@@ -417,7 +417,7 @@ TEST(portableDOM_Tests, Streaming_Parser_Continuations)
         }
     }
     while (totalBytesRead < payload.size());
-    EXPECT_EQ(totalPayloads, 5);
+    EXPECT_EQ(totalPayloads, 5UL);
 }
 
 TEST(portableDOM_Tests, Streaming_Parser_Continuations_ByteBuffer)
@@ -443,7 +443,7 @@ TEST(portableDOM_Tests, Streaming_Parser_Continuations_ByteBuffer)
             bytesRead = doc->parsePartial(payloadRef.slice(totalBytesRead), node);
 
             ASSERT_NE(node, nullptr);
-            EXPECT_NE(bytesRead, 0);
+            EXPECT_NE(bytesRead, 0UL);
 
             totalBytesRead += bytesRead;
             ++totalPayloads;
@@ -454,7 +454,7 @@ TEST(portableDOM_Tests, Streaming_Parser_Continuations_ByteBuffer)
         }
     }
     while (totalBytesRead < payload.size());
-    EXPECT_EQ(totalPayloads, 5);
+    EXPECT_EQ(totalPayloads, 5UL);
 }
 
 

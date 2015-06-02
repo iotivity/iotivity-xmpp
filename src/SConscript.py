@@ -62,7 +62,6 @@ if target_os not in ['windows', 'winrt']:
         '-std=c++11',
         '-fdata-sections',
         '-ffunction-sections',
-        '-flto',
         '-fno-rtti',
         '-DCCF_XMPP_EXPORTS',
         '-DASIO_STANDALONE',

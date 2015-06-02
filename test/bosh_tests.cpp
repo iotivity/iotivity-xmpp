@@ -373,7 +373,7 @@ TEST(BOSH, BoshKeyGen)
     // Send enough payloads to generate at least one rollover.
     const size_t rollover = static_cast<ITestConnectionManager *>
                             (manager.get())->keyRolloverCount("testsid");
-    EXPECT_GT(rollover, 0);
+    EXPECT_GT(rollover, 0UL);
 
     size_t index = rollover * 2;
     const string testStr = "<dummypayload/>";
@@ -412,7 +412,7 @@ TEST(BOSH, BoshClientInactivity)
     // in this 3 second interval from the dummy server.
     this_thread::sleep_for(chrono::seconds(3));
 
-    EXPECT_GT(simServer->bodyCount(), 1);
+    EXPECT_GT(simServer->bodyCount(), 1UL);
     EXPECT_TRUE(simServer->clientWasWellBehaved());
 }
 
