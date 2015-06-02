@@ -390,13 +390,13 @@ TEST(BufferEncrypt, SecureBuffer_Constructor_And_Assignment)
               0);
 
     ASSERT_EQ((const void *)testBuffer1, testBuffer1.cursor());
-    EXPECT_EQ(testBuffer1.position(), 0);
+    EXPECT_EQ(testBuffer1.position(), 0UL);
     char tempBuff[sizeof(memBlock)];
     EXPECT_EQ(testBuffer1.read(tempBuff, sizeof(tempBuff)), sizeof(tempBuff));
     EXPECT_EQ(testBuffer1.position(), sizeof(tempBuff));
     EXPECT_TRUE(testBuffer1.seek(0));
     ASSERT_EQ((const void *)testBuffer1, testBuffer1.cursor());
-    EXPECT_EQ(testBuffer1.position(), 0);
+    EXPECT_EQ(testBuffer1.position(), 0UL);
 
     ByteBuffer testBuffer2(testBuffer1);
     EXPECT_EQ(testBuffer2, testBuffer1);
@@ -635,8 +635,8 @@ TEST(BufferEncrypt, SecureBuffer_Base64_Encode)
         size_t inLen = string(testPairs[i]._inStr).size();
         size_t outLen = string(testPairs[i]._outStr).size();
 
-        EXPECT_GT(inLen, 0);
-        EXPECT_GT(outLen, 0);
+        EXPECT_GT(inLen, 0UL);
+        EXPECT_GT(outLen, 0UL);
 
         SecureBuffer inBuf(testPairs[i]._inStr, inLen), outBuf;
         EXPECT_EQ(inBuf.size(), (size_t)inLen);
@@ -714,8 +714,8 @@ TEST(BufferEncrypt, SecureBuffer_Base64_Decode)
         size_t inLen = string(testPairs[i]._inStr).size();
         size_t outLen = string(testPairs[i]._outStr).size();
 
-        EXPECT_GT(inLen, 0);
-        EXPECT_GT(outLen, 0);
+        EXPECT_GT(inLen, 0UL);
+        EXPECT_GT(outLen, 0UL);
 
         SecureBuffer inBuf(testPairs[i]._inStr, inLen), outBuf;
         EXPECT_EQ(inBuf.size(), (size_t)inLen);
@@ -786,19 +786,19 @@ TEST(BufferEncrypt, SecureBuffer_BufferOverrunTest)
 TEST(BufferEncrypt, SecureBuffer_FromString)
 {
     SecureBuffer bufFromEmpty(string(""));
-    EXPECT_EQ(bufFromEmpty.size(), 0);
+    EXPECT_EQ(bufFromEmpty.size(), 0UL);
 
     SecureBuffer bufNullTerminatedFromEmpty(string(""), SecureBuffer::NullTerminator::IncludeNull);
-    EXPECT_EQ(bufNullTerminatedFromEmpty.size(), 1);
+    EXPECT_EQ(bufNullTerminatedFromEmpty.size(), 1UL);
 
     SecureBuffer bufFromString(string("THIS IS A TEST"));
-    EXPECT_EQ(bufFromString.size(), 14);
-    ASSERT_GT(bufFromString.size(), 1);
+    EXPECT_EQ(bufFromString.size(), 14UL);
+    ASSERT_GT(bufFromString.size(), 1UL);
     EXPECT_EQ(bufFromString[0], 'T');
 
     SecureBuffer bufNullTerminatedFromString(string("THIS IS A TEST"),
             SecureBuffer::NullTerminator::IncludeNull);
-    ASSERT_EQ(bufNullTerminatedFromString.size(), 15);
+    ASSERT_EQ(bufNullTerminatedFromString.size(), 15UL);
     EXPECT_EQ(bufNullTerminatedFromString[0], 'T');
     EXPECT_EQ(bufNullTerminatedFromString[14], '\0');
 
@@ -888,7 +888,7 @@ TEST(STCQueue, Queue_Tests)
     {
         this_thread::sleep_for(chrono::milliseconds(1));
         ++cycleCount;
-        ASSERT_LT(cycleCount, 5000);
+        ASSERT_LT(cycleCount, 5000UL);
     }
     threadQueue.close();
 
@@ -1042,7 +1042,7 @@ TEST(Str_Helpers, UTF8ToUTF32)
 
         size_t inLength = nextOut - &tempBuffer[0];
 
-        ASSERT_GT(inLength, 0);
+        ASSERT_GT(inLength, 0UL);
 
         size_t consumed = 0;
         ASSERT_EQ(convertChar, c);
@@ -1241,13 +1241,13 @@ TEST(Log_Stream, MultiThread_Log_Callback)
 TEST(RandomBuffer, Rand_Buffer)
 {
     RandomBuffer emptyBuf(0);
-    EXPECT_EQ(emptyBuf.size(), 0);
+    EXPECT_EQ(emptyBuf.size(), 0UL);
 
     RandomBuffer someBuf(4096);
-    EXPECT_EQ(someBuf.size(), 4096);
+    EXPECT_EQ(someBuf.size(), 4096UL);
 
     RandomBuffer someBuf2(4096);
-    EXPECT_EQ(someBuf2.size(), 4096);
+    EXPECT_EQ(someBuf2.size(), 4096UL);
 
     // NOTE: There is a very small chance that these two buffers will actually be the same,
     //       presuming hardware random-numer generation. If this fails for you here and the code
@@ -1462,8 +1462,8 @@ TEST(AsyncNotifier_Tests, NotifyAsyncFunc)
     auto testCallback = [](NotifierTestEvent & e) { e.incrementUseCount(); };
     typedef Iotivity::NotifyAsyncFunc<NotifierTestEvent, decltype(testCallback)> FuncNotify;
 
-    EXPECT_EQ(NotifierTestEvent::useCount(), 0);
-    EXPECT_EQ(NotifierTestEvent::destructorCount(), 0);
+    EXPECT_EQ(NotifierTestEvent::useCount(), 0UL);
+    EXPECT_EQ(NotifierTestEvent::destructorCount(), 0UL);
 
     FuncNotify::Ptr newCondition(new FuncNotify(testCallback));
     ASSERT_NE(newCondition, nullptr);
@@ -1473,16 +1473,16 @@ TEST(AsyncNotifier_Tests, NotifyAsyncFunc)
 
     newCondition->notify(testEventNoThrow);
 
-    EXPECT_EQ(NotifierTestEvent::useCount(), 1);
-    EXPECT_EQ(NotifierTestEvent::destructorCount(), 1);
+    EXPECT_EQ(NotifierTestEvent::useCount(), 1UL);
+    EXPECT_EQ(NotifierTestEvent::destructorCount(), 1UL);
 
     NotifierTestEvent *testEventThrow(new NotifierTestEvent(true));
     ASSERT_NE(testEventThrow, nullptr);
 
     EXPECT_THROW(newCondition->notify(testEventThrow), std::runtime_error);
 
-    EXPECT_EQ(NotifierTestEvent::useCount(), 1);
-    EXPECT_EQ(NotifierTestEvent::destructorCount(), 2);
+    EXPECT_EQ(NotifierTestEvent::useCount(), 1UL);
+    EXPECT_EQ(NotifierTestEvent::destructorCount(), 2UL);
 }
 
 
@@ -1510,8 +1510,8 @@ TEST(SyncNotifier_Tests, NotifySyncFunc)
     auto testCallback = [](NotifierTestEvent & e) { e.incrementUseCount(); };
     typedef Iotivity::NotifySyncFunc<NotifierTestEvent, decltype(testCallback)> FuncNotify;
 
-    EXPECT_EQ(NotifierTestEvent::useCount(), 0);
-    EXPECT_EQ(NotifierTestEvent::destructorCount(), 0);
+    EXPECT_EQ(NotifierTestEvent::useCount(), 0UL);
+    EXPECT_EQ(NotifierTestEvent::destructorCount(), 0UL);
 
     FuncNotify::Ptr newCondition(new FuncNotify(testCallback));
     ASSERT_NE(newCondition, nullptr);
@@ -1522,8 +1522,8 @@ TEST(SyncNotifier_Tests, NotifySyncFunc)
         newCondition->notify(testEventNoThrow);
     }
 
-    EXPECT_EQ(NotifierTestEvent::useCount(), 1);
-    EXPECT_EQ(NotifierTestEvent::destructorCount(), 1);
+    EXPECT_EQ(NotifierTestEvent::useCount(), 1UL);
+    EXPECT_EQ(NotifierTestEvent::destructorCount(), 1UL);
 
     {
         NotifierTestEvent testEventThrow(true);
@@ -1531,8 +1531,8 @@ TEST(SyncNotifier_Tests, NotifySyncFunc)
         EXPECT_THROW(newCondition->notify(testEventThrow), std::runtime_error);
     }
 
-    EXPECT_EQ(NotifierTestEvent::useCount(), 1);
-    EXPECT_EQ(NotifierTestEvent::destructorCount(), 2);
+    EXPECT_EQ(NotifierTestEvent::useCount(), 1UL);
+    EXPECT_EQ(NotifierTestEvent::destructorCount(), 2UL);
 }
 
 
