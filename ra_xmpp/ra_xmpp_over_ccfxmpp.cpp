@@ -49,6 +49,7 @@
 #include "ra_xmpp.h"
 
 
+/// @cond HIDDEN_SYMBOLS
 #ifndef _NOEXCEPT
 #ifndef _MSC_VER
 #define _NOEXCEPT noexcept
@@ -56,12 +57,14 @@
 #define _NOEXCEPT
 #endif
 #endif
+/// #endcond
 
 
 using namespace std;
 using namespace Iotivity;
 using namespace Iotivity::XML;
 
+/// @cond HIDDEN_SYMBOLS
 
 struct static_init_test
 {
@@ -795,4 +798,5 @@ extern "C"
 
 } // extern "C"
 
+/// @endcond
 

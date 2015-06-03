@@ -24,6 +24,24 @@
 /// @file ra_xmpp.c
 
 
+/// @mainpage
+/// @{
+///
+/// RA_XMPP is a library providing basic XMPP server connectivity and message-passing providing
+/// a cloud-enabled transport for the Iotivity CoAP discovery mechanism.
+///
+/// RA_XMPP abstracts the choice of XMPP client from the CA layer, hiding the selection of
+/// client implementation from the user of the client. Implementation of new client support
+/// requires only implementation of the xmpp_wrapper_zzz stub functions and handling of
+/// error condititions for any unsupported features.
+///
+///
+/// <ul>
+/// <li>\ref RA</li>
+/// <li>\ref RA_STUBS</li>
+/// </ul>
+/// @}
+
 // Required by ra_xmpp.h for the Windows target builds.
 #ifdef _WIN32
 #include <SDKDDKVer.h>
@@ -40,7 +58,6 @@
 #else
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-// TODO: ?? Import safec into windows build for memset_s?
 errno_t memset_s(void *dest, rsize_t dmax, uint8_t value)
 {
     if (value == 0)
@@ -56,36 +73,144 @@ errno_t memset_s(void *dest, rsize_t dmax, uint8_t value)
 #endif //__APPLE__
 
 
-
+/// @cond HIDDEN_SYMBOLS
 typedef struct
 {
-    xmpp_context_t   *user_context;
-    void                   *wrapper_handle;
+    xmpp_context_t  *user_context;
+    void            *wrapper_handle;
 } xmpp_ctx_t;
-
+/// @endcond
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Wrapper interface (implementation dependent).
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+/// @defgroup RA_STUBS XMPP Client Wrapper Stub Functions
+
+/// @addtogroup RA_STUBS
+/// @{
+/// The XMPP Wrapper functions should be implemented within the RA_XMPP library to interface
+/// directly to the XMPP client implementation. It is assumed by the library that all of these
+/// functions will be thread-safe, so design appropriately.
+/// @}
+
+
+/// @addtogroup RA_STUBS
+/// @{
+
+/// @brief Create an xmpp_wrapper_ instance.
+///
+/// The instance pointer must be cleaned up by xmpp_wrapper_destroy_wrapper. It is recommended
+/// that the pointer provided be opaque to the upper RA_XMPP layer.
 extern void *const xmpp_wrapper_create_wrapper(void);
+
+/// @brief Clean up an xmpp_wrapper_ instance.
+///
+/// All wrapper resources, including server connections, must be cleaned up up by this call.
+/// @param handle The handle returned by xmpp_wrapper_create_wrapper. It is recommended that
+///               the wrapper validate the value of handle, rather than casting it directly
+///               to an internal pointer to a client resource.
 extern void xmpp_wrapper_destroy_wrapper(void *handle);
+
+/// @brief Initiate an asynchronous connection to an XMPP server.
+///
+/// @param handle The handle to the XMPP client instance as returned by
+///               xmpp_wrapper_create_wrapper.
+/// @param host A pointer to the initialized host data structure containing the remote address
+///             of the XMPP server and its XMPP domain.
+/// @param identity A pointer to the initialized identity structure containing the identity
+///                 of the user connecting to the XMPP server.
+/// @param proxy A pointer to the initialzied identity structure containing the address of the
+///              proxy through which the XMPP server may be reached.
+/// @param callback An xmpp_connection_callback_t containing pointers to the callback functions
+///                 to call when the connection attempt succeeds or fails or when an established
+///                 connection disconnects. If multiple connections need to be made, it is
+///                 recommended that the callback.param parameter be different for each.
+/// @return An error code indicating whether the connection request could be initiated. If
+///         XMPP_ERR_OK is returned, the callback must eventually be called with the result
+///         (success or fail) of the connection attempt. If an error code is returned, the
+///         callback must not be called.
 extern xmpp_error_code_t xmpp_wrapper_connect(void *handle,
         const xmpp_host_t *const host,
         const xmpp_identity_t *const identity,
         const xmpp_proxy_t *const proxy,
         xmpp_connection_callback_t callback);
+
+/// @brief Disconnect an established connection to an XMPP server.
+///
+/// @param connection The handle to the XMPP client to server connection as returned in the
+///                   connection callback as passed the xmpp_wrapper_connect call.
+///
+//// @return An error code indicating whether the closing of the xmpp connection could be initiated.
+///          xmpp_close may fail if the connection is already closed. If a disconnect callback
+///          was registered with xmpp_wrapper_connect, disconnect must be called some time after
+///          xmpp_close is called, presuming that XMPP_ERR_OK is returned from xmpp_close.
 extern xmpp_error_code_t xmpp_wrapper_disconnect(xmpp_connection_handle_t connection);
 
+/// @brief Register the callback for receiving messages from an XMPP client connection.
+///
+/// @param connection The handle to the XMPP client to server connection as returned in the
+///                   connection callback as passed to the xmpp_wrapper_connect call.
+/// @param callback An xmpp_message_callback_t containing pointers to the callback functions
+///                 to call when a message send succeeds or an incoming message is received.
+///                 An optional parameter may be used to parameterize the callback
+///                 for multiple registrations on the same connection.
+/// @return A handle to a message-wrapper callback context tracking the callback internally
+///         for the given connection instance or NULL if no such message callback context
+///         could be registered.
+///
+/// @note The wrapper is expected to perform any transport-specific decoding in order to
+///       accept raw data through an XMPP stanza (or stanzas). It is assumed that the decoding
+///       step will have occurred prior to the message arriving through the callback.
+///       The wrapper must be able to reject messages that cannot be decoded by the wrapper.
+///       It is recommended that wrapper not transmit the data payload for any message that
+///       would result in transmitting an error code through the callback. It is also acceptable
+///       for no callback to occur if the message would otherwise be incorrectly formatted.
+/// @note The xmpp_wrapper_register_callback should support the registration of multiple callbacks
+///       for the same connection.
+///
 extern void *xmpp_wrapper_register_message_callback(xmpp_connection_handle_t connection,
         xmpp_message_callback_t callback);
+
+/// @brief Unregister the callback to stop receiving messages from an XMPP client connection.
+///
+/// @param handle The handle to the message wrapper callback as returned by
+///                xmpp_wrapper_register_message_callback.
 extern void xmpp_wrapper_unregister_message_callback(void *handle);
+
+/// @brief Send a message through an XMPP client connection to a remote client.
+///
+/// @param handle The handle to the message wrapper callback as returned by
+///                xmpp_wrapper_register_message_callback.
+/// @param recipient A NULL-terminated UTF-8 string containing the JID of the remote receipient
+///                  being sent the packet.
+/// @param message A pointer to a blob of memory to send to the remote recipient. The blob
+///                will be formatted by the wrapper layer for transport, but if the blob
+///                is larger than the CA MTU, delivery may not be possible and an error result
+///                may be sent to the registered send callbacks.
+/// @param sizeInOctets The size in bytes of the buffer pointed to by message.
+/// @param options Packet-send options and formatting details. For future expansion. Until
+///                defined, the passed-in value should be XMPP_MESSAGE_TRANSMIT_DEFAULT.
+///
+/// @return XMPP_ERR_OK if the message could be queued to be sent. If the message is sent
+///         and a callback is registered for sent messages, the callback will be called with
+///         the original buffer pointer as the message is sent.
+///
+/// @note The wrapper is expected to perform any transport-specific encoding in order to
+///       send the raw data through an XMPP stanza (or stanzas). It must not be assumed that
+///       the message will be well-formed to be transmitted in a stanza without some encoding
+///       step. It is expected that all wrappers follow the RA specification for encoding and
+///       transmission of the data, however the wrapper specification does not stipulate
+///       this format.
 extern xmpp_error_code_t xmpp_wrapper_send_message(void *handle,
         const char *const recipient,
         const void *const message,
         const size_t sizeInOctets,
         xmpp_transmission_options_t options);
+/// @}
 
+
+/// @cond HIDDEN_SYMBOLS
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
@@ -157,9 +282,9 @@ void free_c_str(char *const str)
 void xmpp_context_init(xmpp_context_t *const context)
 {
     if (context)
-    {    
+    {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-        memset_s(context, sizeof(*context), 0,sizeof(*context));
+        memset_s(context, sizeof(*context), 0, sizeof(*context));
 #else
         memset_s(context, sizeof(*context), 0);
 #endif
@@ -189,11 +314,11 @@ void xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
                     xmpp_protocol_t protocol)
 {
     if (host)
-    {    
+    {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-       memset_s(host, sizeof(*host), 0,sizeof(*host));
+        memset_s(host, sizeof(*host), 0, sizeof(*host));
 #else
-       memset_s(host, sizeof(*host), 0);
+        memset_s(host, sizeof(*host), 0);
 #endif
         host->cb = sizeof(*host);
 
@@ -226,9 +351,9 @@ void xmpp_identity_init(xmpp_identity_t *const identity, const char *const user_
                         InBandRegister_t inband_register)
 {
     if (identity)
-    {    
+    {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-        memset_s(identity, sizeof(*identity), 0,sizeof(*identity));
+        memset_s(identity, sizeof(*identity), 0, sizeof(*identity));
 #else
         memset_s(identity, sizeof(*identity), 0);
 #endif
@@ -263,9 +388,9 @@ void xmpp_proxy_init(xmpp_proxy_t *const proxy, const char *const host,
                      uint16_t port, xmpp_proxy_type_t proxy_type)
 {
     if (proxy)
-    {    
+    {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-        memset_s(proxy, sizeof(*proxy), 0,sizeof(*proxy));
+        memset_s(proxy, sizeof(*proxy), 0, sizeof(*proxy));
 #else
         memset_s(proxy, sizeof(*proxy), 0);
 #endif
@@ -453,3 +578,4 @@ void xmpp_message_context_destroy(xmpp_message_context_t ctx)
     }
 }
 
+/// @endcond
