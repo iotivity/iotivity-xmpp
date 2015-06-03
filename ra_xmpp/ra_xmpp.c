@@ -24,6 +24,24 @@
 /// @file ra_xmpp.c
 
 
+/// @mainpage
+/// @{
+///
+/// RA_XMPP is a library providing basic XMPP server connectivity and message-passing providing
+/// a cloud-enabled transport for the Iotivity CoAP discovery mechanism.
+///
+/// RA_XMPP abstracts the choice of XMPP client from the CA layer, hiding the selection of
+/// client implementation from the user of the client. Implementation of new client support
+/// requires only implementation of the xmpp_wrapper_zzz stub functions and handling of
+/// error condititions for any unsupported features.
+///
+///
+/// <ul>
+/// <li>\ref RA</li>
+/// <li>\ref RA_STUBS</li>
+/// </ul>
+/// @}
+
 // Required by ra_xmpp.h for the Windows target builds.
 #ifdef _WIN32
 #include <SDKDDKVer.h>
@@ -68,8 +86,35 @@ typedef struct
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Wrapper interface (implementation dependent).
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+/// @defgroup RA_STUBS XMPP Client Wrapper Stub Functions
+
+/// @addtogroup RA_STUBS
+/// @{
+/// The XMPP Wrapper functions should be implemented within the RA_XMPP library to interface
+/// directly to the XMPP client implementation. It is assumed by the library that all of these
+/// functions will be thread-safe, so design appropriately.
+/// @}
+
+
+/// @addtogroup RA_STUBS
+/// @{
+
+/// @brief Create an xmpp_wrapper_ instance.
+///
+/// The instance pointer must be cleaned up by xmpp_wrapper_destroy_wrapper. It is recommended
+/// that the pointer provided be opaque to the upper RA_XMPP layer.
 extern void *const xmpp_wrapper_create_wrapper(void);
+
+/// @brief Clean up an xmpp_wrapper_ instance.
+///
+/// All wrapper resources, including server connections, must be cleaned up up by this call.
+/// @param handle The handle returned by xmpp_wrapper_create_wrapper. It is recommended that
+///               the wrapper validate the value of handle, rather than casting it directly
+///               to an internal pointer to a client resource.
 extern void xmpp_wrapper_destroy_wrapper(void *handle);
+
+/// @brief Initiate an asynchronous connection to an XMPP server.
+///
 extern xmpp_error_code_t xmpp_wrapper_connect(void *handle,
         const xmpp_host_t *const host,
         const xmpp_identity_t *const identity,
@@ -77,14 +122,38 @@ extern xmpp_error_code_t xmpp_wrapper_connect(void *handle,
         xmpp_connection_callback_t callback);
 extern xmpp_error_code_t xmpp_wrapper_disconnect(xmpp_connection_handle_t connection);
 
+/// @brief Register the callback for receiving messages from an XMPP client connection.
+///
+/// @note The wrapper is expected to perform any transport-specific decoding in order to
+///       accept raw data through an XMPP stanza (or stanzas). It is assumed that the decoding
+///       step will have occurred prior to the message arriving through the callback.
+///       The wrapper must be able to reject messages that cannot be decoded by the wrapper.
+///       It is recommended that wrapper not transmit the data payload for any message that
+///       would result in transmitting an error code through the callback. It is also acceptable
+///       for no callback to occur if the message would otherwise be incorrectly formatted.
+///
 extern void *xmpp_wrapper_register_message_callback(xmpp_connection_handle_t connection,
         xmpp_message_callback_t callback);
+
+/// @brief Unregister the callback to stop receiving messages from an XMPP client connection.
+///
 extern void xmpp_wrapper_unregister_message_callback(void *handle);
+
+/// @brief Send a message through an XMPP client connection to a remote client.
+///
+/// @note The wrapper is expected to perform any transport-specific encoding in order to
+///       send the raw data through an XMPP stanza (or stanzas). It must not be assumed that
+///       the message will be well-formed to be transmitted in a stanza without some encoding
+///       step. It is expected that all wrappers follow the RA specification for encoding and
+///       transmission of the data, however the wrapper specification does not stipulate
+///       this format.
+///
 extern xmpp_error_code_t xmpp_wrapper_send_message(void *handle,
         const char *const recipient,
         const void *const message,
         const size_t sizeInOctets,
         xmpp_transmission_options_t options);
+/// @}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -157,9 +226,9 @@ void free_c_str(char *const str)
 void xmpp_context_init(xmpp_context_t *const context)
 {
     if (context)
-    {    
+    {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-        memset_s(context, sizeof(*context), 0,sizeof(*context));
+        memset_s(context, sizeof(*context), 0, sizeof(*context));
 #else
         memset_s(context, sizeof(*context), 0);
 #endif
@@ -189,11 +258,11 @@ void xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
                     xmpp_protocol_t protocol)
 {
     if (host)
-    {    
+    {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-       memset_s(host, sizeof(*host), 0,sizeof(*host));
+        memset_s(host, sizeof(*host), 0, sizeof(*host));
 #else
-       memset_s(host, sizeof(*host), 0);
+        memset_s(host, sizeof(*host), 0);
 #endif
         host->cb = sizeof(*host);
 
@@ -226,9 +295,9 @@ void xmpp_identity_init(xmpp_identity_t *const identity, const char *const user_
                         InBandRegister_t inband_register)
 {
     if (identity)
-    {    
+    {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-        memset_s(identity, sizeof(*identity), 0,sizeof(*identity));
+        memset_s(identity, sizeof(*identity), 0, sizeof(*identity));
 #else
         memset_s(identity, sizeof(*identity), 0);
 #endif
@@ -263,9 +332,9 @@ void xmpp_proxy_init(xmpp_proxy_t *const proxy, const char *const host,
                      uint16_t port, xmpp_proxy_type_t proxy_type)
 {
     if (proxy)
-    {    
+    {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-        memset_s(proxy, sizeof(*proxy), 0,sizeof(*proxy));
+        memset_s(proxy, sizeof(*proxy), 0, sizeof(*proxy));
 #else
         memset_s(proxy, sizeof(*proxy), 0);
 #endif
