@@ -27,8 +27,12 @@
 #include <gtest/gtest.h>
 
 #include <xmpp/xmppping.h>
+#include <connect/connecterror.h>
 
 #include "xmpp_test_config.h"
+#include "xmpp_connect_config.h"
+#include "xmpp_connect_establish.h"
+
 
 extern "C"
 {
@@ -45,5 +49,44 @@ using namespace Iotivity;
 using namespace Iotivity::Xmpp;
 
 
+#ifndef DISABLE_SUPPORT_XEP0199
 
+TEST(Ping, XEP_0199_One_Shot_Ping)
+{
+    shared_ptr<IXmppClient> client;
+    shared_ptr<IXmppStream> stream;
+    xmpp_test_default_connect_client(stream, client);
+    EXPECT_NE(client, nullptr);
+    ASSERT_NE(stream, nullptr);
 
+    try
+    {
+        string xmppDomain;
+#ifdef ENABLE_LIBSTROPHE
+        xmppDomain = xmpp_connect_config::xmppDomain("NO_PROXY");
+#else
+        xmppDomain = xmpp_connect_config::xmppDomain();
+#endif
+
+        XmppPing ping(stream);
+
+        promise<void> pingPromise;
+        future<void> pinged = pingPromise.get_future();
+
+        ping.sendPing(xmppDomain, [&pingPromise](const connect_error & ce)
+        {
+            auto promise = move(pingPromise);
+            EXPECT_TRUE(ce.succeeded());
+
+            promise.set_value();
+        });
+
+        pinged.get();
+
+        stream->close();
+    }
+    catch (...)
+    {}
+}
+
+#endif // DISABLE_SUPPORT_XEP0199

@@ -26,6 +26,7 @@
 #include "stdafx.h"
 
 #include "xmppservicedisc.h"
+#include "jabberid.h"
 
 #include "../connect/connecterror.h"
 
@@ -38,6 +39,91 @@ namespace Iotivity
 {
     namespace Xmpp
     {
+        static const string XMPP_SERVICE_DISCOVERY_INFO_NS = "http://jabber.org/protocol/disco#info";
+        static const string XMPP_SERVICE_DISCOVERY_ITEMS_NS = "http://jabber.org/protocol/disco#items";
+
+
+        shared_ptr<XmppServiceDiscovery::Params> XmppServiceDiscovery::Params::create()
+        {
+            return shared_ptr<Params>(new Params);
+        }
+
+        bool XmppServiceDiscovery::Params::supportsExtension(const string &extensionName) const
+        {
+            return extensionName == XmppServiceDiscovery::extensionName();
+        }
+
+        XmppServiceDiscovery::XmppServiceDiscovery(shared_ptr<IXmppStream> overStream):
+            XmppExtension(overStream)
+        {
+        }
+
+        XmppServiceDiscovery::~XmppServiceDiscovery()
+        {
+            // Called here so any captured this is not stale when the queries halt.
+            haltSafeQueries();
+        }
+
+        void XmppServiceDiscovery::assignConfiguration(std::shared_ptr<IExtensionParams> config)
+        {
+            if (config && config->supportsExtension(XmppServiceDiscovery::extensionName()))
+            {
+                m_config = static_pointer_cast<Params>(config);
+            }
+        }
+
+        void XmppServiceDiscovery::queryInfo(const JabberID &target, DiscoveryCallback callback)
+        {
+            XMLElement::Ptr request = constructIQ("get", target.full());
+            XMLElement::Ptr query = request->owner()->createElement("query");
+            query->setAttribute("xmlns", XMPP_SERVICE_DISCOVERY_INFO_NS);
+            request->appendChild(query);
+
+            sendSafeQuery(move(request),
+                          [this, callback]
+                          (const connect_error & ce, XMLElement::Ptr response)
+            {
+                if (!ce.succeeded())
+                {
+                    callback(ce, response);
+                    return;
+                }
+
+                connect_error result = testAndProcessErrorResponse(response);
+                if (result.succeeded())
+                {
+                    // TODO: Decode response.
+                }
+                callback(result, response);
+            });
+        }
+
+        void XmppServiceDiscovery::queryItems(const JabberID &target, DiscoveryCallback callback)
+        {
+            XMLElement::Ptr request = constructIQ("get", target.full());
+            XMLElement::Ptr query = request->owner()->createElement("query");
+            query->setAttribute("xmlns", XMPP_SERVICE_DISCOVERY_ITEMS_NS);
+            request->appendChild(query);
+
+            sendSafeQuery(move(request),
+                          [this, callback]
+                          (const connect_error & ce, XMLElement::Ptr response)
+            {
+                if (!ce.succeeded())
+                {
+                    callback(ce, response);
+                    return;
+                }
+
+                connect_error result = testAndProcessErrorResponse(response);
+                if (result.succeeded())
+                {
+                    // TODO: Decode response.
+                }
+                callback(result, response);
+            });
+        }
+
     }
 }
 
