@@ -43,7 +43,7 @@ namespace Iotivity
         {
             void operator()(XmppConfigImpl *);
         };
-        /// @endcode
+        /// @endcond
 
     }
 }

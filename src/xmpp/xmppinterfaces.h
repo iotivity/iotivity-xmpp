@@ -53,6 +53,7 @@ namespace Iotivity
     {
         struct SaslResult;
         class connect_error;
+        class XmppConfig;
 
 
         /// @brief XML Stream interface. Provides a stream from which XML payloads may be
@@ -226,8 +227,15 @@ namespace Iotivity
         class XMPP_API IXmppClient
         {
             public:
+                typedef std::shared_ptr<std::promise<std::shared_ptr<IXmppStream>>>
+                XmppStreamPromise;
+
                 virtual ~IXmppClient() {}
 
+                virtual void initiateXMPP(const XmppConfig &config,
+                                          std::shared_ptr<IXmppConnection> remoteServer,
+                                          XmppStreamPromise xmppConnection =
+                                              XmppStreamPromise()) = 0;
                 virtual SyncEvent<XmppStreamCreatedEvent> &onStreamCreated() = 0;
         };
 

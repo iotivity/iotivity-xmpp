@@ -39,6 +39,7 @@
 #include "../xmpp/xmppconfig.h"
 #include "../xmpp/jabberid.h"
 
+
 // TOOD: Move interface when refactoring for BOSH 'streams'
 #include "../connect/tcpclient.h"
 
@@ -46,7 +47,36 @@
 
 
 
+
+/// @mainpage Iotivity XMPP Client
+///
+/// @section intro Introduction
+///
+/// The Iotivity XMPP Client is a basic C++ XMPP client implementation written to provide
+/// cross-platform support for XMPP for Iotivity and the CCF project.
+///
+/// @section XMPP Support
+///
+/// <ul>
+///     <li>RFC 6120 (XMPP Core)</li>
+///     <li>SASL
+///         <ul>
+///             <li>RFC 4616 (PLAIN)</li>
+///         </ul>
+///     </li>
+///     <li>XMPP Extensions
+///         <ul>
+///             <li>XEP-0077 (In-Band Registration)</li>
+///             <li>XEP-0030 (Service-Discovery) [Basic queries only]</li>
+///             <li>XEP-0199 (XMPP Ping) [Timer-based ping/pong still a WIP]</li>
+///        </ul>
+///     </li>
+/// </ul>
+
+
+
 /// @addtogroup XMPP
+/// @{
 /// Create and start an XMPP client:
 /// @code
 ///
@@ -101,30 +131,7 @@
 /// {}
 ///
 /// @endcode
-
-
-/// @mainpage Iotivity XMPP Client
-///
-/// @section intro Introduction
-///
-/// The Iotivity XMPP Client is a basic C++ XMPP client implementation written to provide
-/// cross-platform support for XMPP for Iotivity and the CCF project.
-///
-/// @section XMPP Support
-///
-/// <ul>
-///     <li>RFC 6120 (XMPP Core)</li>
-///     <li>SASL
-///         <ul>
-///             <li>RFC 4616 (PLAIN)</li>
-///         </ul>
-///     </li>
-///     <li>XMPP Extensions
-///         <ul>
-///             <li>XEP-0077 (In-Band Registration)</li>
-///        </ul>
-///     </li>
-/// </ul>
+/// @}
 
 
 
@@ -234,7 +241,7 @@ namespace Iotivity
             }
         }
 
-      //  const static size_t DEFAULT_BUFFER_SIZE = 4096;
+        //  const static size_t DEFAULT_BUFFER_SIZE = 4096;
 
         void XmppConnection::receive(XMLElement::Ptr &payload)
         {
@@ -987,6 +994,7 @@ namespace Iotivity
                                         onConnected().fire(XmppConnectedEvent(
                                                                connect_error::SUCCESS));
                                         m_boundPromise.set_value(m_boundJabberId);
+                                        m_negotiatedPromise.set_value();
                                     }
                                     else
                                     {
@@ -1486,7 +1494,7 @@ namespace Iotivity
         // Action runner for the XMPP client.
         struct XmppClientRunner: public ActionRunner<std::shared_ptr<IXmppConnection>, XmppContext>
         {
-                XmppClientRunner(XmppClient &owner) /*: m_owner(owner)*/ {}
+                XmppClientRunner(XmppClient &) {}
 
             protected:
                 virtual std::thread createActionThread(std::shared_ptr<runner_queue> queue,
@@ -1527,9 +1535,6 @@ namespace Iotivity
                         }
                     });
                 }
-
-            private:
-              //  XmppClient &m_owner;
         };
         /// @endcond
 
