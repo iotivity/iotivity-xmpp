@@ -277,6 +277,7 @@ xcopy /y /d "$(SolutionDir)\packages\libssh2.redist.1.4.3.1\build\native\bin\v11
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\test\xmpp_connect_config.h" />
+    <ClInclude Include="..\..\test\xmpp_connect_establish.h" />
     <ClInclude Include="..\..\test\xmpp_dummy_server.h" />
     <ClInclude Include="..\..\test\xmpp_test_config.h" />
     <ClInclude Include="stdafx.h" />
@@ -302,6 +303,7 @@ xcopy /y /d "$(SolutionDir)\packages\libssh2.redist.1.4.3.1\build\native\bin\v11
     <ClCompile Include="..\..\test\unittest_base.cpp" />
     <ClCompile Include="..\..\test\xmpp_compliance_tests.cpp" />
     <ClCompile Include="..\..\test\xmpp_connect_config.cpp" />
+    <ClCompile Include="..\..\test\xmpp_connect_establish.cpp" />
     <ClCompile Include="..\..\test\xmpp_dummy_server.cpp" />
     <ClCompile Include="..\..\test\xmpp_tests.cpp" />
     <ClCompile Include="stdafx.cpp">

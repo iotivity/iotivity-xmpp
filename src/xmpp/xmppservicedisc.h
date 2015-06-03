@@ -39,6 +39,40 @@ namespace Iotivity
 {
     namespace Xmpp
     {
+        // XEP-0030 Service Discovery
+        class XmppServiceDiscovery: public XmppExtension
+        {
+            public:
+                class XMPP_API Params: public IExtensionParams
+                {
+                    public:
+                        Params() = default;
+                        Params(const Params &) = default;
+                        static std::shared_ptr<Params> create();
+
+                        virtual bool supportsExtension(const std::string &extensionName) const override;
+                };
+            public:
+                XmppServiceDiscovery(std::shared_ptr<IXmppStream> overStream);
+                virtual ~XmppServiceDiscovery() override;
+
+                static std::string extensionName() { return "XEP0030"; }
+                virtual std::string getExtensionName() const override
+                {
+                    return XmppServiceDiscovery::extensionName();
+                }
+
+                virtual void assignConfiguration(std::shared_ptr<IExtensionParams> config) override;
+
+                typedef std::function<void(const connect_error &,
+                                           const XML::XMLElement::Ptr &)> DiscoveryCallback;
+                void queryInfo(const JabberID &target, DiscoveryCallback callback);
+                void queryItems(const JabberID &target, DiscoveryCallback callback);
+
+
+            private:
+                std::shared_ptr<Params> m_config;
+        };
     }
 }
 
