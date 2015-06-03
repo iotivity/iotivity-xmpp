@@ -27,8 +27,11 @@
 #include <gtest/gtest.h>
 
 #include <xmpp/xmppservicedisc.h>
+#include <connect/connecterror.h>
 
 #include "xmpp_test_config.h"
+#include "xmpp_connect_config.h"
+#include "xmpp_connect_establish.h"
 
 extern "C"
 {
@@ -43,6 +46,111 @@ extern "C"
 using namespace std;
 using namespace Iotivity;
 using namespace Iotivity::Xmpp;
+using namespace Iotivity::XML;
 
 
+#ifndef DISABLE_SUPPORT_XEP0030
+
+TEST(ServiceDiscovery, XEP_0030_Discovery_Info)
+{
+    shared_ptr<IXmppClient> client;
+    shared_ptr<IXmppStream> stream;
+    xmpp_test_default_connect_client(stream, client);
+    EXPECT_NE(client, nullptr);
+    ASSERT_NE(stream, nullptr);
+
+    try
+    {
+        XmppServiceDiscovery serviceDisc(stream);
+
+        string xmppDomain;
+#ifdef ENABLE_LIBSTROPHE
+        xmppDomain = xmpp_connect_config::xmppDomain("NO_PROXY");
+#else
+        xmppDomain = xmpp_connect_config::xmppDomain();
+#endif
+
+        promise<void> queriedPromise;
+        future<void> queried = queriedPromise.get_future();
+        serviceDisc.queryInfo(xmppDomain,
+                              [&queriedPromise](const connect_error & ce,
+                                                const XMLElement::Ptr & e)
+        {
+            auto activeQuery = move(queriedPromise);
+
+            EXPECT_TRUE(ce.succeeded());
+            cout << "RESULT: " << ce.toString() << endl;
+            EXPECT_NE(e, nullptr);
+            if (e)
+            {
+
+            }
+
+            activeQuery.set_value();
+        });
+
+
+        queried.get();
+
+        stream->close();
+    }
+    catch (...)
+    {
+        EXPECT_NO_THROW(throw);
+    }
+}
+
+
+TEST(ServiceDiscovery, XEP_0030_Items_Info)
+{
+    shared_ptr<IXmppClient> client;
+    shared_ptr<IXmppStream> stream;
+    xmpp_test_default_connect_client(stream, client);
+    EXPECT_NE(client, nullptr);
+    ASSERT_NE(stream, nullptr);
+
+    try
+    {
+        XmppServiceDiscovery serviceDisc(stream);
+
+        string xmppDomain;
+#ifdef ENABLE_LIBSTROPHE
+        xmppDomain = xmpp_connect_config::xmppDomain("NO_PROXY");
+#else
+        xmppDomain = xmpp_connect_config::xmppDomain();
+#endif
+
+        promise<void> queriedPromise;
+        future<void> queried = queriedPromise.get_future();
+        serviceDisc.queryItems(xmppDomain,
+                               [&queriedPromise](const connect_error & ce,
+                                       const XMLElement::Ptr & e)
+        {
+            auto activeQuery = move(queriedPromise);
+
+            EXPECT_TRUE(ce.succeeded());
+            cout << "RESULT: " << ce.toString() << endl;
+            EXPECT_NE(e, nullptr);
+            if (e)
+            {
+
+            }
+
+            activeQuery.set_value();
+        });
+
+
+        queried.get();
+
+        stream->close();
+    }
+    catch (...)
+    {
+        EXPECT_NO_THROW(throw);
+    }
+
+}
+
+
+#endif // DISABLE_SUPPORT_XEP0030
 

@@ -139,12 +139,10 @@ namespace Iotivity
 
                 virtual SyncEvent<XmppStreamCreatedEvent> &onStreamCreated();
 
-                typedef std::shared_ptr<std::promise<std::shared_ptr<IXmppStream>>>
-                XmppStreamPromise;
-
-                void initiateXMPP(const XmppConfig &config,
-                                  std::shared_ptr<IXmppConnection> remoteServer,
-                                  XmppStreamPromise xmppConnection = XmppStreamPromise());
+                virtual void initiateXMPP(const XmppConfig &config,
+                                          std::shared_ptr<IXmppConnection> remoteServer,
+                                          XmppStreamPromise xmppConnection =
+                                              XmppStreamPromise()) override;
 
             protected:
                 XmppClient();
