@@ -70,8 +70,15 @@ namespace Iotivity
 
         struct XmppConnectedEvent: public XmppBasicEvent
         {
-            XmppConnectedEvent() = delete;
-            XmppConnectedEvent(const connect_error &errorResult): XmppBasicEvent(errorResult) {}
+                XmppConnectedEvent() = delete;
+                XmppConnectedEvent(const connect_error &errorResult):
+                    XmppBasicEvent(errorResult), m_boundJID() {}
+                XmppConnectedEvent(const connect_error &errorResult, const std::string &boundJID):
+                    XmppBasicEvent(errorResult), m_boundJID(boundJID) {}
+
+                std::string boundJID() const { return m_boundJID; }
+            private:
+                std::string m_boundJID;
         };
 
         struct XmppClosedEvent: public XmppBasicEvent

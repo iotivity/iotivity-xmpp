@@ -386,7 +386,9 @@ namespace Iotivity
                                 }, nullptr, nullptr, nullptr, context->m_self);
 
                                 stream->onConnected().fire(XmppConnectedEvent(
-                                                               connect_error::SUCCESS));
+                                                               connect_error::SUCCESS,
+                                                               getBoundJID()
+                                                           ));
                                 context->m_connectPromise.set_value();
                             }
                             catch (...)
