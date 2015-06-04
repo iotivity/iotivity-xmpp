@@ -129,11 +129,13 @@ typedef void (* xmpp_status_func_t)(xmpp_status_t status);
 /// @param result The result of the connection attempt. If result is XMPP_ERR_OK, the connection
 ///               handle will be a valid handle representing the client connection, otherwise
 ///               the connection handle will be NULL.
+/// @param bound_jid The JID bound to the client connection by the XMPP server.
 /// @param connection The handle representing the connection or NULL if the connection attempt
 ///                   failed. If multiple connection attemptes are running in parallel,
 ///                   parameterize on param to provide context describing which connection
 ///                   attempt's status is being signalled.
 typedef void (* xmpp_connected_func_t)(void *const param, xmpp_error_code_t result,
+                                       const char *const bound_jid,
                                        xmpp_connection_handle_t connection);
 
 /// @brief Callback called when an existing client connection to an XMPP server is disconnected from

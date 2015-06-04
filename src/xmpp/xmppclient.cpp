@@ -992,7 +992,8 @@ namespace Iotivity
                                         cout << "FIRE CONNECTED: " << onConnected().notifierCount()
                                              << endl;
                                         onConnected().fire(XmppConnectedEvent(
-                                                               connect_error::SUCCESS));
+                                                               connect_error::SUCCESS,
+                                                               m_boundJabberId.full()));
                                         m_boundPromise.set_value(m_boundJabberId);
                                         m_negotiatedPromise.set_value();
                                     }

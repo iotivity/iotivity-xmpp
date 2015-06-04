@@ -184,6 +184,7 @@ struct ContextWrapper
                                     xmpp_connection_handle_t connectionHandle = {streamHandle};
                                     callback.on_connected(callback.param,
                                                           translateError(e.result()),
+                                                          e.boundJID().c_str(),
                                                           connectionHandle);
                                 }
                             };
@@ -219,7 +220,7 @@ struct ContextWrapper
                             {
                                 xmpp_connection_handle_t connectionHandle = {params.m_handle};
                                 params.m_callback.on_connected(params.m_callback.param, errorCode,
-                                                               connectionHandle);
+                                                               nullptr, connectionHandle);
                             }
                         }
 
@@ -687,6 +688,9 @@ extern "C"
                         break;
                     case XMPP_PROXY_SOCKS5:
                         proxyType = ProxyConfig::ProxyType::ProxySOCKS5;
+                        break;
+                    case XMPP_PROXY_HTTP:
+                        proxyType = ProxyConfig::ProxyType::ProxyHTTP;
                         break;
                 }
             }
