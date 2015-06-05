@@ -27,7 +27,7 @@ Import('env')
 
 
 SConscript([
-            'test/SConscript.py', 
+            'test/SConscript.py',
             'c_init_test/SConscript.py'
             ])
 
@@ -50,7 +50,7 @@ if target_os not in ['windows', 'winrt']:
         ra_xmpp_env.AppendUnique(
             CXXFLAGS = [
                 '-DENABLE_LIBSTROPHE',
-            ],  
+            ],
             LIBS = ['strophe'])
     ra_xmpp_env.Append(
         LIBS = ['ccfxmpp'],
@@ -58,7 +58,7 @@ if target_os not in ['windows', 'winrt']:
         )
 
     ra_xmpp_env.AppendUnique(
-        CPPPATH = [            
+        CPPPATH = [
             '#src'],
         CXXFLAGS = [
             '-pthread',
@@ -66,9 +66,10 @@ if target_os not in ['windows', 'winrt']:
             '-fdata-sections',
             '-ffunction-sections',
             '-flto',
-            '-DASIO_STANDALONE',            
+            '-DASIO_STANDALONE',
+            '-DXMPP_EXPORTS',
             '-Os',
-            '-Wall', 
+            '-Wall',
             '-Werror',
             '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
             '-fPIC',

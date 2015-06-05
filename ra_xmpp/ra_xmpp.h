@@ -33,6 +33,27 @@
 #include <stdint.h>
 
 
+#if defined(XMPP_EXPORTS)
+#ifdef _WIN32
+#define XMPP_API __declspec(dllexport)
+#else
+#define XMPP_API __attribute__((__visibility__("default")))
+#endif
+#elif defined(XMPP_IMPORTS)
+#ifdef _WIN32
+#define XMPP_API __declspec(dllimport)
+#else
+#define XMPP_API __attribute__((__visibility__("default")))
+#endif
+#else
+#ifdef _WIN32
+#define XMPP_API
+#else
+#define XMPP_API __attribute__((__visibility__("default")))
+#endif
+#endif
+
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -204,11 +225,11 @@ typedef struct xmpp_context
 /// xmpp_context_destroy must be called on the context object before program termination
 /// but may be called any time after xmpp_context_t is used to initialize the XMPP client.
 /// @param context Pointer to the xmpp_context_t structure to initialize.
-void xmpp_context_init(xmpp_context_t *const context);
+void XMPP_API xmpp_context_init(xmpp_context_t *const context);
 
 /// @brief Destroy the XMPP context object and clean up any resources reserved for it.
 /// @param context Pointer to the xmpp_context_t structure to destroy.
-void xmpp_context_destroy(xmpp_context_t *context);
+void XMPP_API xmpp_context_destroy(xmpp_context_t *context);
 
 
 
@@ -261,7 +282,7 @@ typedef struct xmpp_host
 ///                    (e.g. "user_name@xmpp_domain").
 /// @param protocol The protocol being used to communicate with the XMPP server. The host_name
 ///                 may need to be modified in order to support certain protocols (e.g. BOSH).
-void xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
+void XMPP_API xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
                     uint16_t port, const char *const xmpp_domain,
                     xmpp_protocol_t protocol);
 
@@ -272,7 +293,7 @@ void xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
 /// the xmpp_host_t structure.
 ///
 /// @param host A pointer to the structure initialized by calling xmpp_host_init.
-void xmpp_host_destroy(xmpp_host_t *host);
+void XMPP_API xmpp_host_destroy(xmpp_host_t *host);
 
 
 /// @brief Operation to perform when using in-band registration to communicate pseudo-anonymously
@@ -336,14 +357,14 @@ typedef struct xmpp_identity
 ///                        the server configuration is known to support in-band registration
 ///                        and the build of the client includes it, XMPP_NO_IN_BAND_REGISTER
 ///                        should be used preferentially.
-void xmpp_identity_init(xmpp_identity_t *const identity, const char *const user_name,
+void XMPP_API xmpp_identity_init(xmpp_identity_t *const identity, const char *const user_name,
                         const char *const password, const char *const user_jid,
                         InBandRegister_t inband_register);
 
 /// @brief Destroy the XMPP client identity object and clean up any resources reserved for it.
 ///
 /// @param identity A pointer to the structure initialized by calling xmpp_identity_init.
-void xmpp_identity_destroy(xmpp_identity_t *identity);
+void XMPP_API xmpp_identity_destroy(xmpp_identity_t *identity);
 
 
 /// @brief The type of proxy to use when tunneling to the remote XMPP server.
@@ -391,13 +412,13 @@ typedef struct xmpp_proxy
 ///             dependent on the XMPP transport being used and the proxy protocol being used.
 /// @param proxy_type The type of proxy through which the XMPP server connection is to be tunneled
 ///                   (e.g. HTTP for BOSH or SOCKS5 for direct-connect).
-void xmpp_proxy_init(xmpp_proxy_t *const proxy, const char *const host, uint16_t port,
+void XMPP_API xmpp_proxy_init(xmpp_proxy_t *const proxy, const char *const host, uint16_t port,
                      xmpp_proxy_type_t proxy_type);
 
 /// @brief Destroy the XMPP proxy configuration object and clean up any resources reserved for it.
 ///
 /// @param proxy A pointer to the structure initialized by calling xmpp_proxy_init.
-void xmpp_proxy_destroy(xmpp_proxy_t *proxy);
+void XMPP_API xmpp_proxy_destroy(xmpp_proxy_t *proxy);
 
 
 
@@ -415,7 +436,7 @@ void xmpp_proxy_destroy(xmpp_proxy_t *proxy);
 ///                logging configuration).
 /// @return A handle to the xmpp client instance. This handle should be used when initiating
 ///         any subsequent client connections to the server.
-xmpp_handle_t xmpp_startup(const xmpp_context_t *const context);
+xmpp_handle_t XMPP_API xmpp_startup(const xmpp_context_t *const context);
 
 /// @brief Shut down the xmpp client library instance given the handle returned from xmpp_startup.
 ///
@@ -424,7 +445,7 @@ xmpp_handle_t xmpp_startup(const xmpp_context_t *const context);
 /// or that xmpp_close be called for all connections prior to calling xmpp_shutdown_xmpp.
 /// @note xmpp_shutdown_xmpp is not named xmpp_shutdown due to a name conflict with one of
 ///       the supported xmpp client libraries.
-void xmpp_shutdown_xmpp(xmpp_handle_t handle);
+void XMPP_API xmpp_shutdown_xmpp(xmpp_handle_t handle);
 
 /// @cond HIDDEN_SYMBOLS
 // TEST-only function to verify that shutdown will not leak resources.
@@ -449,7 +470,7 @@ int xmpp_global_shutdown_okay(void);
 /// @return An error code indicating whether the connection request could be initiated. If
 ///         XMPP_ERR_OK is returned, the callback will eventually be called with the result
 ///         (success or fail) of the connection attempt.
-xmpp_error_code_t xmpp_connect(xmpp_handle_t handle, const xmpp_host_t *const host,
+xmpp_error_code_t XMPP_API xmpp_connect(xmpp_handle_t handle, const xmpp_host_t *const host,
                                const xmpp_identity_t *const identity,
                                xmpp_connection_callback_t callback);
 
@@ -473,7 +494,7 @@ xmpp_error_code_t xmpp_connect(xmpp_handle_t handle, const xmpp_host_t *const ho
 /// @return An error code indicating whether the connection request could be initiated. If
 ///         XMPP_ERR_OK is returned, the callback will eventually be called with the result
 ///         (success or fail) of the connection attempt.
-xmpp_error_code_t xmpp_connect_with_proxy(xmpp_handle_t handle, const xmpp_host_t *const host,
+xmpp_error_code_t XMPP_API xmpp_connect_with_proxy(xmpp_handle_t handle, const xmpp_host_t *const host,
         const xmpp_identity_t *const identity,
         const xmpp_proxy_t *const proxy,
         xmpp_connection_callback_t callback);
@@ -491,7 +512,7 @@ xmpp_error_code_t xmpp_connect_with_proxy(xmpp_handle_t handle, const xmpp_host_
 ///          was registered with xmpp_connect or xmpp_connect_with_proxy, disconnect will be
 ///          called some time after xmpp_close is called, presuming that XMPP_ERR_OK is returned
 ///          from xmpp_close.
-xmpp_error_code_t xmpp_close(xmpp_connection_handle_t connection);
+xmpp_error_code_t XMPP_API xmpp_close(xmpp_connection_handle_t connection);
 
 
 
@@ -591,7 +612,7 @@ typedef enum xmpp_transmission_options
 ///       that callback.param be different for each registration so the connection may
 ///       be differentiated.
 ///
-xmpp_message_context_t xmpp_message_context_create(xmpp_connection_handle_t connection,
+xmpp_message_context_t XMPP_API xmpp_message_context_create(xmpp_connection_handle_t connection,
         xmpp_message_callback_t callback);
 
 /// @brief Send a byte blob to a remote client with a known user JID (recipient).
@@ -610,14 +631,14 @@ xmpp_message_context_t xmpp_message_context_create(xmpp_connection_handle_t conn
 /// @return XMPP_ERR_OK if the message could be queued to be sent. If the message is sent
 ///         and a callback is registered for sent messages, the callback will be called with
 ///         the original buffer pointer as the message is sent.
-xmpp_error_code_t xmpp_send_message(xmpp_message_context_t ctx, const char *const recipient,
+xmpp_error_code_t XMPP_API xmpp_send_message(xmpp_message_context_t ctx, const char *const recipient,
                                     const void *const message, const size_t messageOctets,
                                     xmpp_transmission_options_t options);
 
 /// @brief Destroy the XMPP message context object and clean up any resources reserved for it.
 ///
 /// @param ctx The message context created by a call to xmpp_message_context_create.
-void xmpp_message_context_destroy(xmpp_message_context_t ctx);
+void XMPP_API xmpp_message_context_destroy(xmpp_message_context_t ctx);
 
 /// @}
 
