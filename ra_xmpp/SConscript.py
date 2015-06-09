@@ -53,7 +53,7 @@ if target_os not in ['windows', 'winrt']:
             ],
             LIBS = ['strophe'])
     ra_xmpp_env.Append(
-        LIBS = ['ccfxmpp'],
+        LIBS = ['ccfxmpp','safec-1.0','pthread'],
         LIBPATH = ['#src']
         )
 
@@ -76,12 +76,21 @@ if target_os not in ['windows', 'winrt']:
             '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
             '-fPIC',
             ])
+
     if target_os not in ['darwin','ios']:
         ra_xmpp_env.AppendUnique(
+            LINKFLAGS = [
+                     '-Wl,--no-undefined'
+                     ],
             CXXFLAGS = [
                 '-Wl,--gc-sections',
                 '-Wl,--strip-all',
                 ])
+    else:
+        ra_xmpp_env.AppendUnique(
+            LINKFLAGS = [
+                     '-Wl,-undefined,error'
+                     ])
 
     if not env['RELEASE']:
         ra_xmpp_env.AppendUnique(CXXFLAGS = [
