@@ -51,7 +51,7 @@ os_arch_map = {
 # Configure command-line variables
 help_vars = Variables()
 help_vars.Add(BoolVariable('VERBOSE', 'Show compilation details?', 'no'))
-help_vars.Add(BoolVariable('RELEASE', 'Build for release?', 'no')) # set to 'no', 'false' or 0 for debug
+help_vars.Add(BoolVariable('RELEASE', 'Build for release?', 'true')) # set to 'no', 'false' or 0 for debug
 help_vars.Add(EnumVariable('TARGET_OS', 'Target platform', platform_host(), host_target_map[platform_host()]))
 
 help_vars.Add(BoolVariable('STROPHE', 'Use libstrophe in place of C++ stream processor', 'no'))
