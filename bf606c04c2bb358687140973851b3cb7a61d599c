@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da141535_0222f500",
+        "filename": "ra_xmpp/SConscript.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 27
+      },
+      "writtenOn": "2015-06-10T03:28:38Z",
+      "side": 1,
+      "message": "Minor: We should remove all whitespace characters.",
+      "range": {
+        "startLine": 88,
+        "startChar": 25,
+        "endLine": 88,
+        "endChar": 26
+      },
+      "revId": "bf606c04c2bb358687140973851b3cb7a61d599c",
+      "serverId": "c6509b8a-a471-4ec1-8e5f-9aed2654acb5",
+      "unresolved": false
+    }
+  ]
+}
