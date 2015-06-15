@@ -561,7 +561,7 @@ namespace Iotivity
         if (inputBuffer.size() > 0)
         {
             size_t newSize = BASE64_ENCODE_RESERVE(inputBuffer.size());
-            if (newSize <= std::numeric_limits<int>::max())
+            if (newSize <= static_cast<size_t>(std::numeric_limits<int>::max()))
             {
                 if (outputBuffer.resizeBuffer(newSize +
                                               32))     // provide extra space of the EVP_EncodeBlock to smash our buffer

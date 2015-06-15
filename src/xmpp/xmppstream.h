@@ -42,6 +42,7 @@ namespace Iotivity
                 XmppStreamBase();
                 XmppStreamBase(const XmppStreamBase &) = delete;
                 XmppStreamBase &operator=(const XmppStreamBase &) = delete;
+                virtual ~XmppStreamBase() _NOEXCEPT {}
 
                 virtual std::string getNextID() override;
 
@@ -66,10 +67,10 @@ namespace Iotivity
 
                 struct ActiveQuery
                 {
-                    ActiveQuery(): m_callback(), m_submittedAt(std::chrono::steady_clock::now()) {}
+                    ActiveQuery(): m_callback(), m_submittedAt(std::chrono::system_clock::now()) {}
 
                     QueryResponse m_callback;
-                    std::chrono::steady_clock::time_point m_submittedAt;
+                    std::chrono::system_clock::time_point m_submittedAt;
                 };
                 typedef std::map<std::string, ActiveQuery> Queries;
                 Queries m_queries;

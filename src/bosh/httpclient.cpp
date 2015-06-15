@@ -45,9 +45,17 @@ namespace Iotivity
                       "Cast of enum curl_infotype to uint not possible."
                       " Increase the size of infotype_t.");
 
-        HttpCurlConnection::HttpCurlConnection(): HttpCurlConnection("") {}
+        HttpCurlConnection::HttpCurlConnection()
+        {
+            initCurl("");
+        }
 
         HttpCurlConnection::HttpCurlConnection(const string &url)
+        {
+            initCurl(url);
+        }
+
+        void HttpCurlConnection::initCurl(const string &url)
         {
             if (curl())
             {

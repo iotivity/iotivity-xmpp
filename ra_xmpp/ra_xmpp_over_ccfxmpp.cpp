@@ -140,8 +140,8 @@ struct ContextWrapper
             }
 #endif
             {
-                lock_guard<recursive_mutex> lock(mutex());
-                s_connectionParams[xmlConnection] = {handle, callback};
+                lock_guard<recursive_mutex> lock(ContextWrapper::mutex());
+                ContextWrapper::s_connectionParams[xmlConnection] = {handle, callback};
             }
             {
                 lock_guard<recursive_mutex> lock(m_mutex);
@@ -150,13 +150,15 @@ struct ContextWrapper
                     m_client = XmppClient::create();
 
                     auto createdFunc =
-                        [](XmppStreamCreatedEvent & e)
+                        // Note: We don't really need reference capturing, but there is a bug in C++
+                        //       4.6 where static functions still require capturing this.
+                        [&](XmppStreamCreatedEvent & e)
                     {
                         ConnectionParams params{};
                         {
-                            lock_guard<recursive_mutex> lock(mutex());
-                            auto f = s_connectionParams.find(e.remoteServer());
-                            if (f == s_connectionParams.end())
+                            lock_guard<recursive_mutex> lock(ContextWrapper::mutex());
+                            auto f = ContextWrapper::s_connectionParams.find(e.remoteServer());
+                            if (f == ContextWrapper::s_connectionParams.end())
                             {
                                 return;
                             }
@@ -168,13 +170,16 @@ struct ContextWrapper
                         {
                             const void *streamHandle = stream.get();
                             {
-                                lock_guard<recursive_mutex> lock(mutex());
-                                s_streamsByHandle[streamHandle] = stream;
+                                lock_guard<recursive_mutex> lock(ContextWrapper::mutex());
+                                ContextWrapper::s_streamsByHandle[streamHandle] = stream;
                             }
 
                             auto callback = params.m_callback;
                             auto streamConnectedFunc =
-                                [stream, streamHandle, callback](XmppConnectedEvent & e)
+                                // Note: We don't really need reference capturing, but there is a
+                                //       bug in C++ 4.6 where static functions still require
+                                //       capturing this.
+                                [&, stream, streamHandle, callback](XmppConnectedEvent & e)
                             {
                                 // Send first presence message
                                 postPresence(stream);
@@ -188,13 +193,16 @@ struct ContextWrapper
                                                           connectionHandle);
                                 }
                             };
-                            using StreamConnectedFunc = NotifySyncFunc<XmppConnectedEvent,
-                                  decltype(streamConnectedFunc)>;
+                            typedef NotifySyncFunc<XmppConnectedEvent,
+                                  decltype(streamConnectedFunc)> StreamConnectedFunc;
                             stream->onConnected() += make_shared<StreamConnectedFunc>(
                                                          streamConnectedFunc);
 
                             auto streamClosedFunc =
-                                [streamHandle, callback](XmppClosedEvent & e)
+                                // Note: We don't really need reference capturing, but there is a
+                                //       bug in C++ 4.6 where static functions still require
+                                //       capturing this.
+                                [&, streamHandle, callback](XmppClosedEvent & e)
                             {
                                 if (callback.on_disconnected)
                                 {
@@ -205,12 +213,12 @@ struct ContextWrapper
                                 }
 
                                 {
-                                    lock_guard<recursive_mutex> lock(mutex());
-                                    s_streamsByHandle.erase(streamHandle);
+                                    lock_guard<recursive_mutex> lock(ContextWrapper::mutex());
+                                    ContextWrapper::s_streamsByHandle.erase(streamHandle);
                                 }
                             };
-                            using StreamClosedFunc = NotifySyncFunc<XmppClosedEvent,
-                                  decltype(streamClosedFunc)>;
+                            typedef NotifySyncFunc<XmppClosedEvent,
+                                  decltype(streamClosedFunc)> StreamClosedFunc;
                             stream->onClosed() += make_shared<StreamClosedFunc>(streamClosedFunc);
                         }
                         else
@@ -227,13 +235,13 @@ struct ContextWrapper
 
                         {
                             lock_guard<recursive_mutex> lock(mutex());
-                            s_connectionParams.erase(e.remoteServer());
+                            ContextWrapper::s_connectionParams.erase(e.remoteServer());
                         }
 
                     };
 
-                    using StreamCreatedFunc = NotifySyncFunc<XmppStreamCreatedEvent,
-                          decltype(createdFunc)>;
+                    typedef NotifySyncFunc<XmppStreamCreatedEvent,
+                          decltype(createdFunc)> StreamCreatedFunc;
                     m_client->onStreamCreated() += make_shared<StreamCreatedFunc>(createdFunc);
                 }
             }
@@ -403,8 +411,8 @@ struct ContextWrapper
                     }
                 }
             };
-            using StreamMessageFunc = NotifySyncFunc<XmppMessageEvent,
-                  decltype(streamMessageFunc)>;
+            typedef NotifySyncFunc<XmppMessageEvent,
+                  decltype(streamMessageFunc)> StreamMessageFunc;
             stream->onMessage() += make_shared<StreamMessageFunc>(streamMessageFunc);
 
 
@@ -543,11 +551,11 @@ struct ContextWrapper
         }
 
     private:
-        recursive_mutex m_mutex{};
-        shared_ptr<XmppClient> m_client{};
+        recursive_mutex m_mutex;
+        shared_ptr<XmppClient> m_client;
 
         static set<const void *> s_wrappers;
-        using StreamHandleMap = map<const void *, weak_ptr<IXmppStream>>;
+        typedef map<const void *, weak_ptr<IXmppStream>> StreamHandleMap;
         static StreamHandleMap s_streamsByHandle;
 
         struct MessageHandler
@@ -558,14 +566,14 @@ struct ContextWrapper
             weak_ptr<IXmppStream> m_stream;
             xmpp_message_callback_t m_callback;
         };
-        using MessageHandlerMap = map<const void *, shared_ptr<MessageHandler>>;
+        typedef map<const void *, shared_ptr<MessageHandler>> MessageHandlerMap;
         static MessageHandlerMap s_messageHandlers;
         struct ConnectionParams
         {
             void *m_handle;
             xmpp_connection_callback_t m_callback;
         };
-        using ConnectParamMap = map<shared_ptr<IXmppConnection>, ConnectionParams>;
+        typedef map<shared_ptr<IXmppConnection>, ConnectionParams> ConnectParamMap;
         static ConnectParamMap s_connectionParams;
 
 };

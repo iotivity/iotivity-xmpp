@@ -98,6 +98,8 @@ namespace Iotivity
                 void headerCallback(const std::string &data);
 
             private:
+                void initCurl(const std::string &url);
+
                 HttpCurlConnection(const HttpCurlConnection &) = delete;
                 HttpCurlConnection &operator=(const HttpCurlConnection &) = delete;
 

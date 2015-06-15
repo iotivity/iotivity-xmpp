@@ -85,7 +85,7 @@ env = Environment(ENV = _import_environment(import_environment_variables))
 
 
 
-env.EnsureSConsVersion(2,3)
+env.EnsureSConsVersion(2,1)
 env.EnsurePythonVersion(2,7)
 
 env.Tool('URLDownload', toolpath=['tools/'])
@@ -232,7 +232,7 @@ def versionSufficient(sourceVer, requiredVer):
 if 'linux' in env['HOST']:
     # Check g++ version (GCC C-version shouldn't matter as much, but can be checked too
     # here if needed)
-    REQUIRED_VER = "4.8.1"
+    REQUIRED_VER = "4.6.2"
     # Check gcc version
     if  not versionSufficient(env['CXXVERSION'], REQUIRED_VER):
         print "g++ version is insufficient to compile the client. Required:", REQUIRED_VER, " Found:", env['CXXVERSION']
