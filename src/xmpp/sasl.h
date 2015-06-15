@@ -239,6 +239,8 @@ namespace Iotivity
                         {}
                 };
 
+                SaslScramSha1(): m_iterations(0) {}
+
                 virtual bool requiresAuthenticatedStream() const override { return false; }
 
                 virtual void setParams(std::shared_ptr<ISaslParams> params) override;
@@ -252,12 +254,12 @@ namespace Iotivity
                 virtual void handleSuccess(const SecureBuffer &response,
                                            ResponseCallback callback) override;
             private:
-                std::shared_ptr<Params> m_params{};
-                std::string m_serverNonce{};
-                std::string m_serverSalt{};
-                SecureBuffer m_challengeData{};
-                SecureBuffer m_serverSig{};
-                size_t m_iterations{0};
+                std::shared_ptr<Params> m_params;
+                std::string m_serverNonce;
+                std::string m_serverSalt;
+                SecureBuffer m_challengeData;
+                SecureBuffer m_serverSig;
+                size_t m_iterations;
         };
 
 

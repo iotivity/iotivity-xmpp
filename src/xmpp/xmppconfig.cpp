@@ -83,7 +83,9 @@ namespace Iotivity
 
 
         //////////
-        XmppConfig::XmppConfig(): XmppConfig(JabberID(""), "") {}
+        XmppConfig::XmppConfig():
+            p_(new XmppConfigImpl(JabberID(""), ""))
+        {}
 
         XmppConfig::XmppConfig(const JabberID &initiator, const std::string &host):
             p_(new XmppConfigImpl(initiator, host))

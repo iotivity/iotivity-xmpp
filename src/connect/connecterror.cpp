@@ -42,10 +42,11 @@ namespace Iotivity
         LocalError::ErrorType connect_error::s_etSOCKS5Error = LocalError::etUnknownError;
         LocalError::ErrorType connect_error::s_etASIOError = LocalError::etUnknownError;
 
-        connect_error::connect_error() {}
+        connect_error::connect_error(): m_httpSubCode(0) {}
 
         connect_error::connect_error(const LocalError &error) :
-            LocalError(error)
+            LocalError(error),
+            m_httpSubCode(0)
         {}
 
         connect_error::connect_error(const connect_error &error) :
@@ -54,7 +55,8 @@ namespace Iotivity
         {}
 
         connect_error::connect_error(ConnectErrorCode errorCode) :
-            LocalError(errorCode, etConnectError())
+            LocalError(errorCode, etConnectError()),
+            m_httpSubCode(0)
         {}
 
         connect_error::connect_error(int httpCode, int httpSubCode) :
@@ -63,7 +65,8 @@ namespace Iotivity
         {}
 
         connect_error::connect_error(ECODE errorCode, ErrorType errorType) :
-            LocalError(errorCode, errorType)
+            LocalError(errorCode, errorType),
+            m_httpSubCode(0)
         {}
 
 #ifndef DISABLE_SUPPORT_NATIVE_XMPP_CLIENT

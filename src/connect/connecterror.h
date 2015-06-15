@@ -141,11 +141,11 @@ namespace Iotivity
                 static ErrorType s_etASIOError; ///< Error code comes from asio library
 
                 // For etHttpError
-                int m_httpSubCode{0};
+                int m_httpSubCode;
 
 #ifndef DISABLE_SUPPORT_NATIVE_XMPP_CLIENT
                 // For etASIOError
-                asio::error_code m_asioError{};
+                asio::error_code m_asioError;
 #endif
         };
 

@@ -295,7 +295,7 @@ string base64Encode(const void *buf, size_t size)
     // 32 as EVP_EncodeBlock adds garbage past the expected end of the buffer.
     size_t bufLen = BASE64_ENCODE_RESERVE(size) + 32;
 
-    auto *tempBuf = new uint8_t[bufLen] {};
+    auto *tempBuf = new uint8_t[bufLen];
     try
     {
         EVP_EncodeBlock(tempBuf, (const uint8_t *)buf, (int)size);
@@ -411,7 +411,8 @@ struct SimpleConnection
 {
     SimpleConnection(const string &instanceName, xmpp_handle_t handle, const xmpp_identity_t &identity,
                      list<xmpp_identity_t> targets):
-        m_instance(instanceName), m_identity(identity)
+        m_instance(instanceName), m_identity(identity),
+        m_shutdown(false), m_onSentCalls(0)
     {
         for (const auto &t : targets)
         {
@@ -498,7 +499,7 @@ struct SimpleConnection
                 {
                     EXPECT_NE(bound_jid, nullptr);
 
-                    xmpp_message_callback_t callback{};
+                    xmpp_message_callback_t callback = {};
                     callback.on_received = &SimpleConnection::onReceived;
                     callback.on_sent = &SimpleConnection::onSent;
                     callback.param = param;
@@ -570,13 +571,13 @@ struct SimpleConnection
 
     string m_instance;
     xmpp_identity_t m_identity;
-    thread m_thread{};
-    bool m_shutdown{false};
-    list<string> m_targets{};
-    list<string> m_messageQueue{};
-    xmpp_connection_handle_t m_connection{};
-    xmpp_message_context_t m_messageContext{};
-    size_t m_onSentCalls{0};
+    thread m_thread;
+    bool m_shutdown;
+    list<string> m_targets;
+    list<string> m_messageQueue;
+    xmpp_connection_handle_t m_connection;
+    xmpp_message_context_t m_messageContext;
+    size_t m_onSentCalls;
 };
 
 

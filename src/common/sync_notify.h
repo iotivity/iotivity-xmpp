@@ -273,7 +273,7 @@ namespace Iotivity
                 if (notifier)
                 {
                     std::lock_guard<_MutexT> lock(m_mutex);
-                    m_notifiers.emplace(notifier);
+                    m_notifiers.insert(notifier);
                 }
                 return *this;
             }
