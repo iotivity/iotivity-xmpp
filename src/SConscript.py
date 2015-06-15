@@ -59,7 +59,9 @@ ccfxmpp_lib_env.AppendUnique(CPPPATH = ['#external/rapidxml-1.13/'])
 if target_os not in ['windows', 'winrt']:
     ccfxmpp_lib_env.AppendUnique(CPPPATH = ['platform/linux/'])
     ccfxmpp_lib_env.AppendUnique(CXXFLAGS = [
-        '-std=c++11',
+        #'-std=c++11',
+        '-std=c++0x',
+        '-Doverride=',
         '-fdata-sections',
         '-ffunction-sections',
         '-fno-rtti',
@@ -67,7 +69,7 @@ if target_os not in ['windows', 'winrt']:
         '-DASIO_STANDALONE',
         '-DASIO_NO_TYPEID',
         '-Os',
-        '-Wall', 
+        '-Wall',
         '-Werror',
         '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
         '-fPIC',
@@ -78,7 +80,7 @@ if target_os not in ['windows', 'winrt']:
                 '-Wl,--gc-sections',
                 '-Wl,--strip-all',
                 ])
-    
+
     if env['STROPHE']:
         ccfxmpp_lib_env.AppendUnique(CXXFLAGS = [
             '-DENABLE_LIBSTROPHE',

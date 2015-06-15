@@ -44,34 +44,36 @@ if target_os not in ['windows', 'winrt']:
         ra_xmpp_test_env.AppendUnique(
             CXXFLAGS = [
                 '-DENABLE_LIBSTROPHE',
-            ],  
+            ],
             LIBS = ['strophe'])
     ra_xmpp_test_env.Append(
-        LIBS = ['ra_xmpp', 'ccfxmpp', 'gtest', 'safec-1.0', 'pthread']
+        LIBS = ['ra_xmpp', 'ccfxmpp', 'gtest', 'safec-1.0', 'pthread', 'curl']
         )
     ra_xmpp_test_env.AppendUnique(
-        LIBPATH = [            
+        LIBPATH = [
             '#ra_xmpp',
             '#src'
             ],
-        CPPPATH = [            
+        CPPPATH = [
             '#ra_xmpp'
             ],
         CXXFLAGS = [
             '-pthread',
-            '-std=c++11',
+            #'-std=c++11',
+            '-std=c++0x',
+            '-Doverride=',
             '-fno-rtti',
-            '-Wall', 
+            '-Wall',
             '-Werror',
             '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
             ])
-        
+
     if target_os not in ['darwin','ios']:
         ra_xmpp_test_env.AppendUnique(
                 LINKFLAGS = [
             '-Wl,--no-as-needed'
             ])
-        
+
     if not env['RELEASE']:
         ra_xmpp_test_env.AppendUnique(CXXFLAGS = [
             '-g'

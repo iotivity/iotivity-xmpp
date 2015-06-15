@@ -170,8 +170,13 @@ TEST(XmppClient, XMPP_StreamEstablish)
         ASSERT_TRUE(xmppStream->whenNegotiated().valid());
 
         auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(10));
+#if __cplusplus>=201103L
         EXPECT_EQ(status, future_status::ready);
         if (status == future_status::ready)
+#else
+        EXPECT_TRUE(status);
+        if (status)
+#endif
         {
             try
             {
@@ -328,16 +333,26 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
 
     auto status1 = streamCallbackFuture.wait_for(chrono::seconds(5));
 
+#if __cplusplus>=201103L
     EXPECT_EQ(status1, future_status::ready);
     if (status1 == future_status::ready)
+#else
+    EXPECT_TRUE(status1);
+    if (status1)
+#endif
     {
         try
         {
             streamCallbackFuture.get();
 
             auto status2 = openCallbackFuture.wait_for(chrono::seconds(10));
+#if __cplusplus>=201103L
             EXPECT_EQ(status2, future_status::ready);
             if (status2 == future_status::ready)
+#else
+            EXPECT_TRUE(status2);
+            if (status2)
+#endif
             {
                 openCallbackFuture.get();
 
@@ -350,8 +365,13 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
                 }
 
                 auto status3 = closedCallbackFuture.wait_for(chrono::seconds(5));
+#if __cplusplus>=201103L
                 EXPECT_EQ(status3, future_status::ready);
                 if (status3 == future_status::ready)
+#else
+                EXPECT_TRUE(status3);
+                if (status3)
+#endif
                 {
                     try
                     {
@@ -719,7 +739,11 @@ TEST(XmppClient, XMPP_StreamParseTests)
                 if (willCompleteNegotiation)
                 {
                     auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(5));
+#if __cplusplus>=201103L
                     EXPECT_EQ(status, future_status::ready);
+#else
+                    EXPECT_TRUE(status);
+#endif
                 }
                 else
                 {
@@ -794,8 +818,13 @@ TEST(XmppClient, DISABLED_Dummy_Chat_Test)
         ASSERT_TRUE(xmppStream->whenNegotiated().valid());
 
         auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(20));
+#if __cplusplus>=201103L
         EXPECT_EQ(status, future_status::ready);
         if (status == future_status::ready)
+#else
+        EXPECT_TRUE(status);
+        if (status)
+#endif
         {
             ASSERT_NO_THROW(xmppStream->whenNegotiated().get());
 

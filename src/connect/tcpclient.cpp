@@ -133,7 +133,7 @@ namespace Iotivity
                     m_ioService(ioService), m_config(proxy) {}
 
                 SOCKS5Connect(asio::io_service &ioService, const string &host, const string &port):
-                    SOCKS5Connect(ioService, ProxyConfig(host, port,
+                    m_ioService(ioService), m_config(ProxyConfig(host, port,
                                                          ProxyConfig::ProxyType::ProxySOCKS5))
                 {}
 
@@ -486,7 +486,10 @@ namespace Iotivity
 
         //////////
         TcpConnection::TcpConnection(const string &host, const string &port):
-            TcpConnection(host, port, ProxyConfig()) {}
+            p_(new TcpConnectionImpl(host, port, ProxyConfig()))
+        {
+            initTcpConnection();
+        }
 
         TcpConnection::TcpConnection(const string &host, const string &port,
                                      const ProxyConfig &proxy):

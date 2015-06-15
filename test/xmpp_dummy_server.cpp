@@ -355,6 +355,7 @@ void SegmentRunner::run(const SegmentArray &segments)
         {
             if (willCompleteNegotiation)
             {
+#if __cplusplus>=201103L
                 auto status = m_stream->whenNegotiated().wait_for(chrono::seconds(5));
                 EXPECT_EQ(status, future_status::ready);
 
@@ -363,6 +364,16 @@ void SegmentRunner::run(const SegmentArray &segments)
                     auto status = m_stream->whenBound().wait_for(chrono::seconds(5));
                     EXPECT_EQ(status, future_status::ready);
                 }
+#else
+                bool status = m_stream->whenNegotiated().wait_for(chrono::seconds(5));
+                EXPECT_TRUE(status);
+
+                if (willCompleteBind)
+                {
+                    bool status = m_stream->whenBound().wait_for(chrono::seconds(5));
+                    EXPECT_TRUE(status);
+                }
+#endif
             }
             size_t sleepCount = 0;
             while (!remoteTcp->lastSegmentRan() && sleepCount < 1000)

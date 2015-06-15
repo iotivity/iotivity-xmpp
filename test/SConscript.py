@@ -62,7 +62,8 @@ if target_os not in ['windows', 'winrt']:
             '#src'
             ],
         CXXFLAGS = [
-            '-std=c++11',
+            '-std=c++0x',
+            '-Doverride=',
             '-fdata-sections',
             '-ffunction-sections',
             '-flto',

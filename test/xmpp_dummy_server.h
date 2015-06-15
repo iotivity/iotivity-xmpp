@@ -92,7 +92,7 @@ class SegmentedDummyTCPConnect: public DummyTCPConnect
 
         bool lastSegmentRan() const { return currentAction() == Segment::OutOfActions; }
 
-        using CaptureMap = std::map<std::string, std::string>;
+        typedef std::map<std::string, std::string> CaptureMap;
         CaptureMap captures() const { return m_captures; }
 
     protected:
@@ -122,10 +122,10 @@ class SegmentRunner
         std::shared_ptr<Iotivity::Xmpp::IXmppStream> stream() const { return m_stream; }
 
     private:
-        SegmentedDummyTCPConnect::CaptureMap m_captures{};
-        std::shared_ptr<Iotivity::Xmpp::IXmppStream> m_stream{};
+        SegmentedDummyTCPConnect::CaptureMap m_captures;
+        std::shared_ptr<Iotivity::Xmpp::IXmppStream> m_stream;
         Iotivity::Xmpp::XmppConfig m_config;
-        std::shared_ptr<Iotivity::Xmpp::XmppClient> m_client{};
+        std::shared_ptr<Iotivity::Xmpp::XmppClient> m_client;
 };
 
 #endif // ifndef DISABLE_SUPPORT_NATIVE_XMPP_CLIENT
