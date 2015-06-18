@@ -226,7 +226,11 @@ struct ConnectCallbackTest
 };
 
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(ra_xmpp, xmpp_remote_connect)
+#else
+TEST(ra_xmpp, DISABLED_xmpp_remote_connect)
+#endif
 {
     xmpp_context_t context;
     xmpp_context_init(&context);
@@ -352,7 +356,11 @@ void constructTestUserAuth(const string &userPart1, const string &userPart2,
                base64Encode(hmac, sizeof(hmac) / sizeof(hmac[0]));
 }
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(ra_xmpp, xmpp_remote_register_connect)
+#else
+TEST(ra_xmpp, DISABLED_xmpp_remote_register_connect)
+#endif
 {
     xmpp_context_t context;
     xmpp_context_init(&context);
@@ -412,7 +420,7 @@ struct SimpleConnection
     SimpleConnection(const string &instanceName, xmpp_handle_t handle, const xmpp_identity_t &identity,
                      list<xmpp_identity_t> targets):
         m_instance(instanceName), m_identity(identity),
-        m_shutdown(false), m_onSentCalls(0)
+        m_shutdown(false), m_connection(), m_messageContext(), m_onSentCalls(0)
     {
         for (const auto &t : targets)
         {
@@ -581,8 +589,11 @@ struct SimpleConnection
 };
 
 
-
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(ra_xmpp, message_send_receive_test)
+#else
+TEST(ra_xmpp, DISABLED_message_send_receive_test)
+#endif
 {
     // Initiate parallel connections with different users.
     xmpp_context_t context;

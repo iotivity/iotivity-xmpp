@@ -355,7 +355,7 @@ void SegmentRunner::run(const SegmentArray &segments)
         {
             if (willCompleteNegotiation)
             {
-#if __cplusplus>=201103L
+#if __cplusplus>=201103L || defined(_WIN32)
                 auto status = m_stream->whenNegotiated().wait_for(chrono::seconds(5));
                 EXPECT_EQ(status, future_status::ready);
 

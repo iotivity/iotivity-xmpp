@@ -68,6 +68,12 @@ if target_os not in ['windows', 'winrt']:
             '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
             ])
 
+    if env['FUNCTIONAL_TESTS']==1:
+        ra_xmpp_test_env.AppendUnique(
+            CXXFLAGS = [
+                '-DENABLE_FUNCTIONAL_TESTING',
+            ])
+
     if target_os not in ['darwin','ios']:
         ra_xmpp_test_env.AppendUnique(
                 LINKFLAGS = [
