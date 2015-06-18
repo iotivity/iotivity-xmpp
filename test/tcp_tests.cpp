@@ -44,7 +44,12 @@ using namespace std;
 using namespace Iotivity;
 using namespace Iotivity::Xmpp;
 
+
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(TcpConnection, XmppConnect)
+#else
+TEST(TcpConnection, DISABLED_XmppConnect)
+#endif
 {
     ProxyConfig proxy("proxy-us.intel.com", "1080", ProxyConfig::ProxyType::ProxySOCKS5);
     TcpConnection testConnection(JABBERDAEMON_TEST_HOST, JABBERDAEMON_TEST_PORT, proxy);
@@ -59,7 +64,11 @@ TEST(TcpConnection, XmppConnect)
 }
 
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(TcpConnection, SynchronousReadWrite)
+#else
+TEST(TcpConnection, DISABLED_SynchronousReadWrite)
+#endif
 {
     ProxyConfig proxy("proxy-us.intel.com", "1080", ProxyConfig::ProxyType::ProxySOCKS5);
     TcpConnection testConnection(JABBERDAEMON_TEST_HOST, JABBERDAEMON_TEST_PORT, proxy);
@@ -70,7 +79,11 @@ TEST(TcpConnection, SynchronousReadWrite)
 }
 
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(TcpConnection, AsynchronousReadWrite)
+#else
+TEST(TcpConnection, DISABLED_AsynchronousReadWrite)
+#endif
 {
     ProxyConfig proxy("proxy-us.intel.com", "1080", ProxyConfig::ProxyType::ProxySOCKS5);
     TcpConnection testConnection(JABBERDAEMON_TEST_HOST, JABBERDAEMON_TEST_PORT, proxy);

@@ -51,7 +51,11 @@ using namespace Iotivity::Xmpp;
 
 #ifndef DISABLE_SUPPORT_NATIVE_XMPP_CLIENT
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(InBandRegistration, XEP0077_Register_Remove)
+#else
+TEST(InBandRegistration, DISABLED_XEP0077_Register_Remove)
+#endif
 {
     if (!xmpp_connect_config::hasConfig())
     {

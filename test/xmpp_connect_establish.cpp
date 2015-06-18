@@ -169,7 +169,7 @@ void xmpp_test_default_connect_client(shared_ptr<IXmppStream> &stream,
         xmppStream = streamFuture.get();
         if (xmppStream)
         {
-#if __cplusplus>=201103L
+#if __cplusplus>=201103L || defined(_WIN32)
             future_status status = xmppStream->whenNegotiated().wait_for(chrono::seconds(10));
             if (status == future_status::ready)
 #else

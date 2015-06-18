@@ -51,7 +51,11 @@ using namespace Iotivity::XML;
 
 #ifndef DISABLE_SUPPORT_XEP0030
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(ServiceDiscovery, XEP_0030_Discovery_Info)
+#else
+TEST(ServiceDiscovery, DISABLED_XEP_0030_Discovery_Info)
+#endif
 {
     shared_ptr<IXmppClient> client;
     shared_ptr<IXmppStream> stream;
@@ -101,7 +105,11 @@ TEST(ServiceDiscovery, XEP_0030_Discovery_Info)
 }
 
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(ServiceDiscovery, XEP_0030_Items_Info)
+#else
+TEST(ServiceDiscovery, DISABLED_XEP_0030_Items_Info)
+#endif
 {
     shared_ptr<IXmppClient> client;
     shared_ptr<IXmppStream> stream;

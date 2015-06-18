@@ -91,7 +91,11 @@ static const string SERVER_AUTH_SUCCESS = "<success xmlns=\"urn:ietf:params:xml:
 
 // bind-gen [Client N/A]
 // bind-mtn [Client MUST]
+#ifdef REGEX_SUPPORTED
 TEST(Xmpp_Compliance, bind_mtn)
+#else
+TEST(Xmpp_Compliance, DISABLED_bind_mtn)
+#endif
 {
     // Verify that bind is generated in a normal negotation
     SegmentArray normalSegments =
@@ -142,7 +146,11 @@ TEST(Xmpp_Compliance, bind_mtn)
 }
 
 // bind-restart [Client MUST]
+#ifdef REGEX_SUPPORTED
 TEST(Xmpp_Compliance, bind_restart)
+#else
+TEST(Xmpp_Compliance, DISABLED_bind_restart)
+#endif
 {
     // Attempt a manual restart after the resource-bind completes.
     SegmentArray normalSegments =
@@ -187,7 +195,11 @@ TEST(Xmpp_Compliance, bind_restart)
 }
 
 // bind-support [Client MUST]
+#ifdef REGEX_SUPPORTED
 TEST(Xmpp_Compliance, bind_support)
+#else
+TEST(Xmpp_Compliance, DISABLED_bind_support)
+#endif
 {
     // Verify that bind support is present.
     SegmentArray normalSegments =

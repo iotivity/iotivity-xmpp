@@ -56,6 +56,7 @@ help_vars.Add(EnumVariable('TARGET_OS', 'Target platform', platform_host(), host
 
 help_vars.Add(BoolVariable('STROPHE', 'Use libstrophe in place of C++ stream processor', 'no'))
 help_vars.Add(BoolVariable('DOWNLOAD_OPENSSL', 'Force download and build of the openSSL library', 'no'))
+help_vars.Add(BoolVariable('FUNCTIONAL_TESTS', 'Build the functional test within the unit test modules', 'no'))
 
 
 
@@ -247,9 +248,9 @@ env = conf.Finish()
 
 #get packages from brew, etc.
 if target_os in ['darwin']:
-   env.AppendUnique( 
-         LIBPATH = [            
+   env.AppendUnique(
+         LIBPATH = [
             '/usr/local/lib'
             ])
-   
+
 

@@ -181,7 +181,11 @@ TEST(HttpConnection, Http_HostName)
     // TODO:
 }
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(HttpConnection, Http_Simple_Connect)
+#else
+TEST(HttpConnection, DISABLED_Http_Simple_Connect)
+#endif
 {
     HttpCurlConnection connection;
     ASSERT_TRUE(connection.isValid());
@@ -207,7 +211,11 @@ TEST(HttpConnection, Http_Simple_Connect)
     }
 }
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(HttpConnection, DISABLED_Https_Connect)
+#else
+TEST(HttpConnection, DISABLED_Https_Connect)
+#endif
 {
     HttpCurlConnection connection;
     ASSERT_TRUE(connection.isValid());
