@@ -114,7 +114,11 @@ TEST(XmppClient, XMPPConfig)
 
 
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(XmppClient, XMPP_StreamEstablish)
+#else
+TEST(XmppClient, DISABLED_XMPP_StreamEstablish)
+#endif
 {
 #ifdef ENABLE_LIBSTROPHE
     if (!xmpp_connect_config::hasConfig("NO_PROXY"))
@@ -170,7 +174,7 @@ TEST(XmppClient, XMPP_StreamEstablish)
         ASSERT_TRUE(xmppStream->whenNegotiated().valid());
 
         auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(10));
-#if __cplusplus>=201103L
+#if __cplusplus>=201103L || defined(_WIN32)
         EXPECT_EQ(status, future_status::ready);
         if (status == future_status::ready)
 #else
@@ -217,7 +221,11 @@ TEST(XmppClient, XMPP_StreamEstablish)
 
 
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
+#else
+TEST(XmppClient, DISABLED_XMPP_StreamEstablish_Event_Callbacks)
+#endif
 {
 
 #ifdef ENABLE_LIBSTROPHE
@@ -333,7 +341,7 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
 
     auto status1 = streamCallbackFuture.wait_for(chrono::seconds(5));
 
-#if __cplusplus>=201103L
+#if __cplusplus>=201103L || defined(_WIN32)
     EXPECT_EQ(status1, future_status::ready);
     if (status1 == future_status::ready)
 #else
@@ -346,7 +354,7 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
             streamCallbackFuture.get();
 
             auto status2 = openCallbackFuture.wait_for(chrono::seconds(10));
-#if __cplusplus>=201103L
+#if __cplusplus>=201103L || defined(_WIN32)
             EXPECT_EQ(status2, future_status::ready);
             if (status2 == future_status::ready)
 #else
@@ -365,7 +373,7 @@ TEST(XmppClient, XMPP_StreamEstablish_Event_Callbacks)
                 }
 
                 auto status3 = closedCallbackFuture.wait_for(chrono::seconds(5));
-#if __cplusplus>=201103L
+#if __cplusplus>=201103L || defined(_WIN32)
                 EXPECT_EQ(status3, future_status::ready);
                 if (status3 == future_status::ready)
 #else
@@ -739,7 +747,7 @@ TEST(XmppClient, XMPP_StreamParseTests)
                 if (willCompleteNegotiation)
                 {
                     auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(5));
-#if __cplusplus>=201103L
+#if __cplusplus>=201103L || defined(_WIN32)
                     EXPECT_EQ(status, future_status::ready);
 #else
                     EXPECT_TRUE(status);
@@ -818,7 +826,7 @@ TEST(XmppClient, DISABLED_Dummy_Chat_Test)
         ASSERT_TRUE(xmppStream->whenNegotiated().valid());
 
         auto status = xmppStream->whenNegotiated().wait_for(chrono::seconds(20));
-#if __cplusplus>=201103L
+#if __cplusplus>=201103L || defined(_WIN32)
         EXPECT_EQ(status, future_status::ready);
         if (status == future_status::ready)
 #else
@@ -982,7 +990,11 @@ TEST(XmppClient, DISABLED_Dummy_Chat_Test)
 }
 
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(XmppClient, XMPP_Request_ID_Generation)
+#else
+TEST(XmppClient, XMPP_Request_ID_Generation)
+#endif
 {
     if (!xmpp_connect_config::hasConfig())
     {
@@ -1272,7 +1284,11 @@ TEST(XmppClient, XMPP_Sasl_Prep)
 }
 
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(XmppClient, XMPP_StreamEstablishOverBOSH)
+#else
+TEST(XmppClient, DISABLED_XMPP_StreamEstablishOverBOSH)
+#endif
 {
     auto remoteConnect = make_shared<HttpCurlConnection>(xmpp_connect_config::BOSHUrl());
 

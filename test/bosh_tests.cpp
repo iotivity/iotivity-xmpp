@@ -74,7 +74,11 @@ TEST(BOSH, TestPromise)
     resultPromise->get_future().wait_for(chrono::milliseconds(100));
 }
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(BOSH, TestClientConnection)
+#else
+TEST(BOSH, DISABLED_TestClientConnection)
+#endif
 {
 #ifdef ENABLE_LIBSTROPHE
     if (!xmpp_connect_config::hasConfig("NO_PROXY"))

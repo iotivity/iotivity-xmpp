@@ -45,7 +45,7 @@ target_os = ccfxmpp_tests_env.get('TARGET_OS')
 
 if target_os not in ['windows', 'winrt']:
     # Force the use of the static library so that we don't need to export everything tested
-    # from the shared library.        
+    # from the shared library.
     ccfxmpplib = File(env['BUILD_DIR']+'libccfxmpp.a')
 
     # We use append rather than appendunique to force certain dynamic libraries to appear
@@ -72,7 +72,7 @@ if target_os not in ['windows', 'winrt']:
             '-DASIO_STANDALONE',
             '-DASIO_NO_TYPEID',
             '-DGTEST_HAS_EXCEPTIONS=1',
-            '-Wall', 
+            '-Wall',
             '-Werror',
             '-Wno-unknown-pragmas',             # Ignore any windows-specific pragmas (don't warn)
             ])
@@ -80,8 +80,13 @@ if target_os not in ['windows', 'winrt']:
         ccfxmpp_tests_env.AppendUnique(
             CXXFLAGS = [
                 '-DENABLE_LIBSTROPHE',
-            ],  
+            ],
             LIBS = ['libstrophe'])
+    if env['FUNCTIONAL_TESTS']==1:
+        ccfxmpp_tests_env.AppendUnique(
+            CXXFLAGS = [
+                '-DENABLE_FUNCTIONAL_TESTING',
+            ])
     if target_os not in ['darwin']:
         ccfxmpp_tests_env.AppendUnique(
             LINKFLAGS = [

@@ -51,7 +51,11 @@ using namespace Iotivity::Xmpp;
 
 #ifndef DISABLE_SUPPORT_XEP0199
 
+#ifdef ENABLE_FUNCTIONAL_TESTING
 TEST(Ping, XEP_0199_One_Shot_Ping)
+#else
+TEST(Ping, DISABLED_XEP_0199_One_Shot_Ping)
+#endif
 {
     shared_ptr<IXmppClient> client;
     shared_ptr<IXmppStream> stream;
