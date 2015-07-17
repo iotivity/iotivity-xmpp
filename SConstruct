@@ -19,7 +19,7 @@
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 ##
-# The main build script for ccfxmpp
+# The main build script for ccfxmpp !
 #
 ##
 
