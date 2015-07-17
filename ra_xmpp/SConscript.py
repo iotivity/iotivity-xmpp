@@ -53,7 +53,7 @@ if target_os not in ['windows', 'winrt']:
             ],
             LIBS = ['strophe'])
     ra_xmpp_env.Append(
-        LIBS = ['ccfxmpp','safec-1.0','pthread'],
+        LIBS = ['ccfxmpp','pthread'],
         LIBPATH = ['#src']
         )
 
