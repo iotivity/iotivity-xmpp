@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "9a0e1d27_78588bfa",
+        "filename": "ra_xmpp/ra_xmpp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 619
+      },
+      "writtenOn": "2015-07-17T19:19:40Z",
+      "side": 1,
+      "message": "Done",
+      "revId": "ae3a96316699b2332aa5935745bb3c2df176415a",
+      "serverId": "c6509b8a-a471-4ec1-8e5f-9aed2654acb5",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a0e1d27_f88ffb73",
         "filename": "ra_xmpp/ra_xmpp.c",
         "patchSetId": 2
@@ -19,6 +36,64 @@
         "endLine": 321,
         "endChar": 15
       },
+      "revId": "ae3a96316699b2332aa5935745bb3c2df176415a",
+      "serverId": "c6509b8a-a471-4ec1-8e5f-9aed2654acb5",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a0e1d27_b85e23e8",
+        "filename": "ra_xmpp/ra_xmpp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 619
+      },
+      "writtenOn": "2015-07-17T19:19:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a0e1d27_f88ffb73",
+      "range": {
+        "startLine": 321,
+        "startChar": 14,
+        "endLine": 321,
+        "endChar": 15
+      },
+      "revId": "ae3a96316699b2332aa5935745bb3c2df176415a",
+      "serverId": "c6509b8a-a471-4ec1-8e5f-9aed2654acb5",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a0e1d27_3872137d",
+        "filename": "ra_xmpp/ra_xmpp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 619
+      },
+      "writtenOn": "2015-07-17T19:19:40Z",
+      "side": 1,
+      "message": "Done",
+      "revId": "ae3a96316699b2332aa5935745bb3c2df176415a",
+      "serverId": "c6509b8a-a471-4ec1-8e5f-9aed2654acb5",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a0e1d27_186f4f94",
+        "filename": "ra_xmpp/ra_xmpp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 619
+      },
+      "writtenOn": "2015-07-17T19:19:40Z",
+      "side": 1,
+      "message": "Done",
       "revId": "ae3a96316699b2332aa5935745bb3c2df176415a",
       "serverId": "c6509b8a-a471-4ec1-8e5f-9aed2654acb5",
       "unresolved": false
