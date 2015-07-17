@@ -33,8 +33,10 @@
 extern "C"
 {
 #if !defined(_WIN32)
+#ifdef WITH_SAFE
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
+#endif
 #endif //WIN32
 }
 

@@ -46,8 +46,10 @@
 extern "C"
 {
 #if !defined(_WIN32)
+#ifdef WITH_SAFE
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
+#endif
 #endif
 }
 
@@ -166,7 +168,7 @@ void SegmentedDummyTCPConnect::async_receive(std::shared_ptr<ByteBuffer> buffer,
             //       smaller too, but this should not affect normal operation.
             throw runtime_error("Insufficient buffer for simulated read request");
         }
-        memcpy_s(buffer->get(), buffer->size(), currentData.c_str(), currentData.size());
+        memcpy(buffer->get(), currentData.c_str(), buffer->size());
         nextAction();
         f(connect_error::SUCCESS, currentData.size());
     }
@@ -269,7 +271,7 @@ void SegmentedDummyTCPConnect::async_receive(std::shared_ptr<ByteBuffer> buffer,
         {
             throw runtime_error("Insufficient buffer for simulated read request");
         }
-        memcpy_s(buffer->get(), buffer->size(), currentData.c_str(), currentData.size());
+        memcpy(buffer->get(), currentData.c_str(), buffer->size());
         nextAction();
         f(connect_error::SUCCESS, currentData.size());
 #else

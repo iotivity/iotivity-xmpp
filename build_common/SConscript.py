@@ -233,7 +233,7 @@ def versionSufficient(sourceVer, requiredVer):
 if 'linux' in env['HOST']:
     # Check g++ version (GCC C-version shouldn't matter as much, but can be checked too
     # here if needed)
-    REQUIRED_VER = "4.6.2"
+    REQUIRED_VER = "4.6"
     # Check gcc version
     if  not versionSufficient(env['CXXVERSION'], REQUIRED_VER):
         print "g++ version is insufficient to compile the client. Required:", REQUIRED_VER, " Found:", env['CXXVERSION']

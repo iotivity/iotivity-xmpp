@@ -21,10 +21,10 @@
 Import('env')
 
 # Windows does not require safec, as the functions used are present in its C standard library
-if env['PLATFORM'] not in ['win']:
-    SConscript([
-               'safec/SConscript.py',
-               ], duplicate = 0)
+# if env['PLATFORM'] not in ['win']:
+#     SConscript([
+#                'safec/SConscript.py',
+#                ], duplicate = 0)
 
 SConscript([
            'asio/SConscript.py',
