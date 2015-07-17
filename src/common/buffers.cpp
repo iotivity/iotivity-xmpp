@@ -48,8 +48,10 @@
 extern "C"
 {
 #if !defined(_WIN32)
+#ifdef WITH_SAFE
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
+#endif
 #endif
 }
 
@@ -777,7 +779,7 @@ namespace Iotivity
         if (buf && size && m_position < this->size())
         {
             bytesRead = std::min(size, this->size() - m_position);
-            memcpy_s(buf, size, &((unsigned char *)ptr())[m_position], bytesRead);
+            memcpy(buf, &((unsigned char *)ptr())[m_position], bytesRead);
             m_position += bytesRead;
         }
         return bytesRead;
@@ -814,7 +816,7 @@ namespace Iotivity
                 // the position.
                 if (buf)
                 {
-                    memcpy_s(&((unsigned char *)ptr())[m_position], size, buf, size);
+                    memcpy(&((unsigned char *)ptr())[m_position], buf, size);
                 }
                 m_position += size;
                 appended = true;

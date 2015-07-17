@@ -45,8 +45,10 @@
 extern "C"
 {
 #if !defined(_WIN32)
+#ifdef WITH_SAFE
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
+#endif
 #endif
 }
 
@@ -602,7 +604,7 @@ namespace Iotivity
             m_sourceStr = m_sourceDoc.allocate_string(0, size + 1);
             if (m_sourceStr)
             {
-                memcpy_s(m_sourceStr, size, (const void *)utf8SrcBuffer, size);
+                memcpy(m_sourceStr, (const void *)utf8SrcBuffer, size);
                 m_sourceStr[size] = 0;
                 m_sourceDoc.parse(m_sourceStr, bytesRead, parse_stop_at_next_sibling);
                 outNode = documentElement();
@@ -627,7 +629,7 @@ namespace Iotivity
             m_sourceStr = m_sourceDoc.allocate_string(0, size + 1);
             if (m_sourceStr)
             {
-                memcpy_s(m_sourceStr, size, (const void *)utf8SrcBuffer, size);
+                memcpy(m_sourceStr, (const void *)utf8SrcBuffer, size);
                 m_sourceStr[size] = 0;
                 m_sourceDoc.parse(m_sourceStr, ending == EndingTest::IgnoreEnding ?
                                   parse_default : parse_validate_closing_tags);

@@ -46,7 +46,7 @@ if target_os not in ['windows', 'winrt']:
             ],
             LIBS = ['strophe'])
     ra_xmpp_test_env.Append(
-        LIBS = ['ra_xmpp', 'ccfxmpp', 'safec-1.0', 'curl']
+        LIBS = ['ra_xmpp', 'ccfxmpp', 'curl']
         )
     ra_xmpp_test_env.AppendUnique(
         LIBPATH = [

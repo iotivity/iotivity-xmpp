@@ -29,14 +29,17 @@
 #include "rand_helper.h"
 #include <openssl/evp.h>
 #include <stdint.h>
+#include <string.h>
 #include <limits>
 #include <algorithm>
 
 extern "C"
 {
 #if !defined(_WIN32)
+#ifdef WITH_SAFE
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
+#endif
 #endif
 }
 
@@ -225,7 +228,7 @@ namespace Iotivity
             // Otherwise clear out the memory.
             ::SecureZeroMemory(ptr(), allocatedSize());
 #  else
-            ::memset_s(ptr(), allocatedSize(), 0);
+            ::memset(ptr(), 0, allocatedSize());
 #  endif
 #endif
 
@@ -278,7 +281,7 @@ namespace Iotivity
                             newBufferRealSize - DEBUG_BYTE_BUFFER_GUARD_REGION_SIZE,
                             ptr(), std::min(newBufferRealSize, allocatedSize()));
 #else
-                ::memmove_s(newPtr, newBufferRealSize, ptr(), std::min(newBufferRealSize, allocatedSize()));
+                ::memmove(newPtr, ptr(), std::min(newBufferRealSize, allocatedSize()));
 #endif
                 freeBufferSecure();
 
