@@ -989,8 +989,6 @@ namespace Iotivity
                                         doc->appendChild(message);
                                         sendMessage(move(message));
 
-                                        cout << "FIRE CONNECTED: " << onConnected().notifierCount()
-                                             << endl;
                                         onConnected().fire(XmppConnectedEvent(
                                                                connect_error::SUCCESS,
                                                                m_boundJabberId.full()));
@@ -1603,9 +1601,7 @@ namespace Iotivity
 
                             stream = make_shared<XmppStream>(config, remoteServer);
 
-                            cout << "STREAMCREATED INITIAL FIRE: " << onStreamCreated().notifierCount() << endl;
                             onStreamCreated().fire(XmppStreamCreatedEvent(stream, remoteServer));
-                            cout << "STREAMCREATED AFTER FIRE: " << onStreamCreated().notifierCount() << endl;
                             remoteServer->connect();
 
                             {
