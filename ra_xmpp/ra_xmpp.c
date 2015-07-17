@@ -53,8 +53,10 @@
 #include <errno.h>
 
 #if !defined(_WIN32)
+#ifdef WITH_SAFE
 #include <safe_mem_lib.h>
 #include <safe_str_lib.h>
+#endif
 #else
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -247,7 +249,7 @@ char *const clone_c_str(const char *const str)
         char *const cloned_str = malloc(str_len + 1);
         if (cloned_str)
         {
-            memmove_s(cloned_str, str_len, str, str_len);
+            memmove(cloned_str, str, str_len);
             cloned_str[str_len] = 0;
 
             return cloned_str;
@@ -284,9 +286,9 @@ void xmpp_context_init(xmpp_context_t *const context)
     if (context)
     {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-        memset_s(context, sizeof(*context), 0, sizeof(*context));
+        memset_s(context, sizeof (*context), 0, sizeof(*context));
 #else
-        memset_s(context, sizeof(*context), 0);
+        memset(context, 0, sizeof(*context));
 #endif
         context->cb = sizeof(*context);
     }
@@ -303,7 +305,7 @@ xmpp_context_t *clone_context(const xmpp_context_t *context)
     xmpp_context_t *cloned_context = calloc(1, sizeof(*context));
     if (cloned_context)
     {
-        memmove_s(cloned_context, sizeof(*cloned_context), context, sizeof(*context));
+        memmove(cloned_context, context, sizeof(*context));
     }
     return cloned_context;
 }
@@ -318,7 +320,7 @@ void xmpp_host_init(xmpp_host_t *const host, const char *const host_name,
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
         memset_s(host, sizeof(*host), 0, sizeof(*host));
 #else
-        memset_s(host, sizeof(*host), 0);
+        memset(host, 0, sizeof(*host));
 #endif
         host->cb = sizeof(*host);
 
@@ -353,9 +355,9 @@ void xmpp_identity_init(xmpp_identity_t *const identity, const char *const user_
     if (identity)
     {
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
-        memset_s(identity, sizeof(*identity), 0, sizeof(*identity));
+        memset_s(identity, sizeof (*identity), 0, sizeof(*identity));
 #else
-        memset_s(identity, sizeof(*identity), 0);
+        memset(identity, 0, sizeof(*identity));
 #endif
         identity->cb = sizeof(*identity);
 
@@ -392,7 +394,7 @@ void xmpp_proxy_init(xmpp_proxy_t *const proxy, const char *const host,
 #if (defined(__STDC_WANT_LIB_EXT1__) && (__STDC_WANT_LIB_EXT1__ >= 1))
         memset_s(proxy, sizeof(*proxy), 0, sizeof(*proxy));
 #else
-        memset_s(proxy, sizeof(*proxy), 0);
+        memset(proxy, 0, sizeof(*proxy));
 #endif
 
 

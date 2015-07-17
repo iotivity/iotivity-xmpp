@@ -51,7 +51,7 @@ if target_os not in ['windows', 'winrt']:
     # We use append rather than appendunique to force certain dynamic libraries to appear
     # after the static libraries. This does result in duplication on the command line.
     ccfxmpp_tests_env.Append(
-        LIBS = [ccfxmpplib, 'gmock', 'gtest', 'curl', 'ssl', 'pthread', 'crypto', 'safec-1.0'],
+        LIBS = [ccfxmpplib, 'gmock', 'gtest', 'curl', 'ssl', 'pthread', 'crypto'],
         )
     ccfxmpp_tests_env.AppendUnique(
         LIBPATH = [
