@@ -59,17 +59,6 @@ class URLNode(SCons.Node.Python.Value) :
         except Exception, e :
             raise SCons.Errors.StopError( '%s [%s]' % (e, self.value) )
 
-    def visited(self) :
-        ninfo = self.get_ninfo()
-
-        if self.url_etag :
-            ninfo.csig = self.url_etag
-        if self.url_last_modified :
-            ninfo.timestamp = self.url_last_modified
-        if self.url_content_length :
-            ninfo.size = self.url_content_length
-        SCons.Node.Node.visited(self);
-
     def changed_since_last_build(self, target, prev_ni):
         if prev_ni :
             if self.url_etag :

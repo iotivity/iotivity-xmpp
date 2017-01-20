@@ -33,7 +33,7 @@ target_os = gmock_env.get('TARGET_OS')
 
 src_dir= 'gmock-1.7.0/'
 tar_file = 'gmock-1.7.0.zip'
-tar_url = 'https://googlemock.googlecode.com/files/gmock-1.7.0.zip'
+tar_url = 'https://src.fedoraproject.org/repo/pkgs/gmock/gmock-1.7.0.zip/073b984d8798ea1594f5e44d85b20d66/gmock-1.7.0.zip'
 
 if not os.path.exists(tar_file):
     target_zip = gmock_env.URLDownload(tar_file, tar_url)
